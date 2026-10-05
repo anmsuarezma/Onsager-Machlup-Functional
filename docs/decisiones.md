@@ -136,3 +136,37 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
   4. **§3:** la duración 1/8 + 1/4 de la excursión se matiza como indicativa, con dependencia logarítmica en D.
 - **Alternativas:** dejar el cuaderno como se aprobó y corregirlo en el hito 01; mover la etiqueta `hito-00`.
 - **Justificación:** el error de §8 contradice un punto central del taller y conviene corregirlo antes de que el bloque estocástico y la parte teórica lo usen como referencia. Se crea la etiqueta nueva `hito-00.1` y `hito-00` se mantiene en el commit aprobado, para conservar la historia de la revisión.
+
+## 2026-10-05 — Hito 01: dependencias y cómputo
+
+### D19. El Bloque B se implementa en CPU con Numba, no en GPU
+
+- **Decisión (de los revisores):** la simulación estocástica usa Numba en CPU (`@njit(parallel=True)` con `prange` sobre trayectorias), más una referencia en NumPy puro. No se usa GPU en este bloque.
+- **Problema encontrado con la GPU.** Se instaló `numba-cuda[cu12]` 0.30.4, con CUDA 12.9: el extra `cu13` resolvía a `cuda-toolkit` 13.4, más nuevo que el CUDA 13.2 del driver 595.91.07. Con numpy 2.5.3, compilar cualquier kernel fallaba con `AttributeError: module 'numpy' has no attribute 'row_stack'`: numpy 2.5 eliminó `np.row_stack` y numba-cuda la sigue registrando.
+  - NVIDIA puso numba-cuda en modo de mantenimiento el 2026-06-25 (issue NVIDIA/numba-cuda#902): solo corregirá fallos críticos y de seguridad durante la vida de CUDA 13.
+  - Cerró como *not planned* el soporte de numpy 2.5 (issue #907, 2026-09-10) y recomienda migrar a `numba-cuda-mlir`.
+- **Alternativas probadas** (en entornos temporales, fuera de FMA):
+  - (a) numba-cuda 0.30.4 con numpy 2.4.6: funcionaba (kernel mínimo con error 0.0; Ornstein-Uhlenbeck con varianza 0.50007 frente a 0.5; 2.3e9 pasos/s en float64).
+  - (b) numba-cuda-mlir 0.5.4 con numpy 2.5.3: el kernel mínimo funcionaba, pero `xoroshiro128p_normal_float64` no compilaba dentro de un kernel (`Untyped global name`) y la inicialización de estados corría en Python interpretado (8.4 s para 4096 estados).
+- **Justificación:** un kernel CUDA, con una dependencia en modo de mantenimiento, cuesta más complejidad de la que aporta a este experimento. En CPU, cualquiera puede reproducirlo sin GPU NVIDIA. Numba en CPU con 16 hilos da 5.3e8 pasos/s en float64 (prueba de Ornstein-Uhlenbeck: media y varianza compatibles con los valores exactos de Euler-Maruyama a 0.63 errores estándar). Es suficiente para el hito.
+- **Nota para el hito neuronal (Bloque A):** PyTorch trae su propio runtime de CUDA en sus *wheels* (no depende del de Numba ni del toolkit del sistema); solo exige un driver compatible. Allí se ofrecerá elegir el dispositivo `cuda`, `mps` o `cpu`, y la prueba de GPU de CLAUDE.md §12 se hará con `torch.cuda.is_available()` y el nombre del dispositivo.
+
+### D20. numpy fijado en `>=2.4,<2.5` y regresión del hito 00
+
+- **Decisión (de los revisores):** `numpy>=2.4,<2.5` en `pyproject.toml`, de forma preventiva: Numba suele ir atrasado respecto a numpy. uv resolvió numpy 2.4.6 (antes 2.5.3). El grupo `estocastico` queda con `numba` 0.68.0 (trae `llvmlite` 0.50.0) y `pyyaml` 6.0.3; PyYAML ya estaba instalado como dependencia transitiva de Jupyter. No cambió ninguna otra versión.
+- **Regresión del hito 00 con numpy 2.4.6:**
+  - `uv run pytest`: 70 passed.
+  - El cuaderno del hito 00 se ejecuta sin errores desde una sesión limpia.
+  - Los 262 números impresos por el cuaderno son idénticos como texto a los de la ejecución con numpy 2.5.3.
+  - 38 valores clave recalculados a precisión completa son idénticos bit a bit en los dos entornos (diferencia relativa máxima 0): errores de `solve_ivp` de primer y segundo orden, `quad` de `S_min` y `S0`, familias λ, `E0` de `eigh_tridiagonal`, Kramers y tiempos de primer paso `T(0)` y `T(+1)`. La versión con numpy 2.5.3 se ejecutó en un entorno temporal con las versiones del lockfile anterior.
+  - Las seis figuras regeneradas son idénticas byte a byte.
+
+### D21. `default-groups = ["dev", "estocastico"]`
+
+- **Decisión:** el grupo `estocastico` se instala por defecto.
+- **Alternativa:** pasar `--group estocastico` en cada `uv sync` o `uv run`.
+- **Justificación:** `uv sync` es exacto y, sin esto, desinstalaba Numba del entorno FMA (comprobado con `--dry-run`).
+
+### D22. Hilos de Numba
+
+- **Decisión (de los revisores):** 16 hilos por defecto (8 núcleos con hyperthreading), no la máquina completa (20 hilos). El valor va en la configuración; la bandera `--hilos` de los scripts tiene prioridad. Se aplica con `numba.set_num_threads`. Los metadatos de cada resultado guardan el número de hilos y la capa de hilos de Numba (en esta máquina, `tbb`, con la `libtbb.so.12` del sistema).

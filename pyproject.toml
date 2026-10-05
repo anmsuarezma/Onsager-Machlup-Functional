@@ -6,7 +6,9 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "matplotlib>=3.11.2",
-    "numpy>=2.5.3",
+    # numpy < 2.5 de forma preventiva: Numba suele ir atrasado respecto a numpy
+    # (numba-cuda falló con np.row_stack, eliminada en 2.5; ver D19).
+    "numpy>=2.4,<2.5",
     "scipy>=1.18.1",
     "sympy>=1.14.0",
 ]
@@ -25,3 +27,10 @@ dev = [
     "jupytext>=1.19.6",
     "pytest>=9.1.1",
 ]
+estocastico = [
+    "numba>=0.68.0",
+    "pyyaml>=6.0.3",
+]
+
+[tool.uv]
+default-groups = ["dev", "estocastico"]
