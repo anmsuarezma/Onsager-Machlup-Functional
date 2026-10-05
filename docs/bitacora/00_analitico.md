@@ -2,12 +2,14 @@
 
 ## Entorno
 
-Registrado el 2026-10-04, al preparar el proyecto.
+Registrado el 2026-10-04, al preparar el proyecto. Actualizado el mismo día al migrar al entorno compartido FMA (el `.venv` local inicial usaba el Python 3.12.3 del sistema y se eliminó).
 
 | Elemento | Valor |
 |---|---|
 | Sistema operativo | Ubuntu 24.04.5 LTS, kernel 6.14.0-37-generic |
-| Python | 3.12.3 (intérprete del sistema, usado por uv en `.venv`) |
+| Python | 3.12.13, gestionado por uv (`~/.local/share/uv/python/cpython-3.12.13-linux-x86_64-gnu`) |
+| Entorno | FMA: `~/Documents/Mauricio/Doctorado Fisica/Fisica Matematica Avanzada/FMA`, vía `UV_PROJECT_ENVIRONMENT` |
+| Kernel de Jupyter | `FMA` (`~/.local/share/jupyter/kernels/fma`) |
 | uv | 0.10.11 |
 | git | 2.43.0 |
 | GPU | NVIDIA GeForce RTX 3060, 12 288 MiB |
@@ -37,9 +39,11 @@ Desarrollo (grupo `dev`):
 
 El conjunto completo (109 paquetes instalados en `.venv`, incluido `taller`) está fijado en `uv.lock`.
 
+Las versiones no cambiaron al sincronizar contra FMA: `uv sync` instaló exactamente lo fijado en `uv.lock`.
+
 ### Pruebas del entorno
 
-`tests/test_entorno.py`: 7 pruebas de importación, todas pasan (detalle en el resumen del hito).
+`tests/test_entorno.py`: 7 pruebas de importación, todas pasan, tanto en el `.venv` inicial como en FMA.
 
 ### Pendientes para hitos futuros
 

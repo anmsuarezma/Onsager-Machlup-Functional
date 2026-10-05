@@ -113,7 +113,7 @@ Al terminar cada hito, entrega un resumen breve: qué se implementó, qué prueb
 
 ## 6. Reproducibilidad
 
-- **Entorno:** gestionado con `uv` y `pyproject.toml`. Versiones de dependencias fijadas en el lockfile.
+- **Entorno:** gestionado con `uv` y `pyproject.toml`. Versiones de dependencias fijadas en el lockfile. El entorno es **FMA**, compartido durante el semestre, en `~/Documents/Mauricio/Doctorado Fisica/Fisica Matematica Avanzada/FMA` (Python 3.12 gestionado por uv, kernel de Jupyter `FMA`). uv lo usa mediante `UV_PROJECT_ENVIRONMENT`; no hay `.venv` local.
 - **Semillas:** todo lo aleatorio recibe su semilla desde un archivo de `configs/`, nunca codificada dentro de una función.
 - **Resultados crudos:** se guardan en `results/` (formato `.npz` o similar) junto con sus metadatos: parámetros usados, semilla, fecha y hash del commit de git.
 - **Figuras:** se generan **desde los resultados guardados**, nunca directamente de una simulación en vivo. Cualquier figura debe poder regenerarse sin volver a simular.
