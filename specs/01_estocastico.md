@@ -87,3 +87,34 @@ Decisiones de los revisores posteriores a la especificación (registradas en doc
 (3) numpy fijado en >=2.4,<2.5 (D20). La regresión del hito 00 con numpy 2.4.6 se hizo antes de empezar este hito: 70 pruebas pasan, los valores clave del cuaderno son idénticos bit a bit y las figuras, byte a byte.
 
 (4) Hilos (D22). 16 hilos por defecto (8 núcleos con hyperthreading), no los 20 de la máquina. El valor va en la configuración; la bandera --hilos de los scripts tiene prioridad. Se aplica con numba.set_num_threads.
+
+=====================================================
+ACLARACIONES APROBADAS (2026-10-05, revisión del plan)
+=====================================================
+
+Respuestas de los revisores al plan del hito y a sus preguntas. Complementan el texto original y las aclaraciones (1)-(4); donde una de ellas se reemplaza, se indica.
+
+(5) División del trabajo. Claude escribe el código, las pruebas y los scripts, y ejecuta solo pruebas y validaciones pequeñas. Los revisores ejecutan las corridas de producción (E3 y E4). Para cada corrida, Claude entrega una estimación de tiempo con 10 hilos.
+
+(6) Hilos: 10 por defecto. Reemplaza el valor de la aclaración (4). Razón: la máquina se ha apagado varias veces bajo carga y no se quiere exigirla de más. La bandera --hilos sigue teniendo prioridad.
+
+(7) Corrección de puente browniano en los tiempos de primer paso. Euler-Maruyama solo ve la trayectoria en instantes discretos y pierde los cruces que ocurren entre pasos; en la cima x = 0 la deriva se anula y el sesgo de T(−1 → 0) es de varios por ciento con los dt de la decisión 4.
+- Si en un paso x_n < b y x_{n+1} < b, se considera que la trayectoria cruzó b entre ambos instantes con probabilidad exp(−(b − x_n)(b − x_{n+1})/(D dt)) (puente browniano con σ² = 2D), y el cruce se asigna al final del paso.
+- Se aplica igual a ambos destinos (cima y pozo), por uniformidad.
+- Se valida por separado antes de usarla en E3 y E4, con un caso de solución conocida: movimiento browniano sin deriva, cuya probabilidad de alcanzar un nivel antes de un tiempo dado es exacta (principio de reflexión).
+- Se guardan y reportan también los tiempos sin corregir: el sesgo y su corrección son un resultado del taller.
+- Los criterios de E3 (2 %) y E4 (3 %) se aplican a los tiempos corregidos de ambos destinos, tal como están.
+
+(8) E3. N = 10⁵ trayectorias por dt. La monotonía del error se exige solo entre los dt cuyo error supera 2 errores estándar (por debajo, el error está dominado por el ruido estadístico). El dt de producción es el mayor dt cuyo error es < 0.02 en ambos destinos.
+
+(9) E4. Para D = 0.1 se usan 2·10⁴ trayectorias (error estadístico relativo ≈ 0.7 %); para los demás D, 10⁵.
+
+(10) E5. El ajuste se hace con ambos destinos. Las pendientes exactas en D ≤ 0.2 (0.9884 para el pozo, 0.9900 para la cima) se reportan como resultado físico: en ese rango de D, las correcciones al prefactor desvían la pendiente de Arrhenius de ΔV = 1.
+
+(11) E7. La ventana se extiende hasta t_cima + 0.5: muestras en t_cima − 3 + 0.01·k, k = 0, ..., 350. El criterio de la desviación cuadrática media se evalúa en t ∈ [−0.5, 0.25], donde x_om ≤ −0.35. Razón: x_om solo describe la subida y nunca alcanza la cima; cerca de la cima la deriva se anula, el ruido domina y el tubo es más ancho. Las figuras muestran la ventana completa.
+
+(12) Las muestras de una ventana anteriores a t = 0 (cuando t_cima < 3) se guardan como NaN y la mediana se calcula con nanmedian.
+
+(13) E2. 10⁵ trayectorias, equilibrado hasta t = 50 y 20 muestras por trayectoria separadas 5.0, con intervalos de ancho 0.05 en [−2, 2]. Razón: con D = 0.5 el tiempo de correlación es del orden del tiempo de transición (~10); muestras separadas 1.0 estarían muy correlacionadas y el ruido estadístico de la distancia L1 quedaría cerca del umbral.
+
+(14) Reanudación. La máquina se ha apagado varias veces. El script de producción guarda un archivo por D (E4) y por dt (E3) y, si el resultado ya existe, lo salta, salvo con la bandera --rehacer. Así un apagado solo cuesta el D en curso.

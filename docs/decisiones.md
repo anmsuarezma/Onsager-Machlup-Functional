@@ -167,6 +167,39 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Alternativa:** pasar `--group estocastico` en cada `uv sync` o `uv run`.
 - **Justificación:** `uv sync` es exacto y, sin esto, desinstalaba Numba del entorno FMA (comprobado con `--dry-run`).
 
-### D22. Hilos de Numba
+### D22. Hilos de Numba (reemplazada por D23)
 
 - **Decisión (de los revisores):** 16 hilos por defecto (8 núcleos con hyperthreading), no la máquina completa (20 hilos). El valor va en la configuración; la bandera `--hilos` de los scripts tiene prioridad. Se aplica con `numba.set_num_threads`. Los metadatos de cada resultado guardan el número de hilos y la capa de hilos de Numba (en esta máquina, `tbb`, con la `libtbb.so.12` del sistema).
+
+## 2026-10-05 — Hito 01: revisión del plan
+
+### D23. 10 hilos por defecto (reemplaza a D22)
+
+- **Decisión (de los revisores):** el valor por defecto de `configs/estocastico/comun.yaml` pasa de 16 a 10 hilos. La bandera `--hilos` sigue teniendo prioridad; se sigue aplicando con `numba.set_num_threads` y los metadatos siguen guardando hilos y capa de hilos.
+- **Alternativas:** mantener 16; usar los 20 hilos de la máquina.
+- **Justificación:** la máquina se ha apagado varias veces bajo carga y no se quiere exigirla de más. Rendimiento medido con 10 hilos (integrador de prueba, D = 0.25, dt = 1e-3, 4·10⁴ trayectorias): 1.9·10⁸ pasos/s sin la corrección de puente y 1.57·10⁸ con ella (con 16 hilos: 2.4·10⁸ sin corrección).
+
+### D24. Corrección de puente browniano en los tiempos de primer paso
+
+- **Problema:** en x = 0 la deriva se anula y Euler-Maruyama pierde cruces entre pasos. Con una simulación de prueba (D = 0.25, 2·10⁴ trayectorias), T(−1 → 0) sale sesgado en +3.9 % (dt = 1e-3) y +3.4 % (dt = 5e-4), con error estándar de 0.7 %; la estimación teórica es ≈ 0.93·√(2 dt), independiente de D. T(−1 → +1) no tenía sesgo medible. Ningún dt de la lista cumplía el 2 % de E3 en la cima.
+- **Decisión (de los revisores, opción A del plan):** si x_n < b y x_{n+1} < b, se considera un cruce entre pasos con probabilidad exp(−(b − x_n)(b − x_{n+1})/(D dt)), asignado al final del paso. Se aplica a ambos destinos; se valida antes con el movimiento browniano sin deriva (solución exacta por el principio de reflexión); se guardan también los tiempos sin corregir. Los criterios de E3 y E4 se aplican a los tiempos corregidos.
+- **Detalles de implementación (de Claude):** la trayectoria se integra hasta el último de estos instantes: llegada sin corregir a +1 y t_cima + 0.5 (fin de la ventana de E7), para registrar ambos tiempos y la ventana completa. La ventana y la alineación de E7 se refieren al t_cima corregido. La prueba E1 compara Numba y NumPy tanto en tiempos corregidos como sin corregir, así que la referencia NumPy implementa también la corrección.
+- **Alternativas:** (B) aplicar E3 y E4 solo al pozo; (C) bajar dt a ≈ 1e-4, fuera de la lista de la especificación.
+- **Justificación:** con la corrección, el sesgo desaparece incluso con dt = 1e-2 en la simulación de prueba (−1.4 % ± 0.7 %), lo que abarata E4 en un factor de 10 a 20 frente a dt = 1e-3 o 5e-4.
+
+### D25. Criterios de E3, E5 y E7, y parámetros de E2 y E4
+
+- **Decisión (de los revisores):** E3 con N = 10⁵ y monotonía exigida solo entre los dt con error > 2 errores estándar; E4 con N = 2·10⁴ en D = 0.1; E5 con ambos destinos, reportando las pendientes exactas 0.9884 (pozo) y 0.9900 (cima); ventana de E7 hasta t_cima + 0.5 (351 muestras) con el criterio RMS en t ∈ [−0.5, 0.25]; NaN y nanmedian para muestras anteriores a t = 0; E2 con 10⁵ trayectorias, equilibrado hasta t = 50, 20 muestras separadas 5.0 e intervalos de 0.05.
+- **Justificación:** ver las aclaraciones (8)-(13) de `specs/01_estocastico.md`. En particular, en E7 x_om nunca alcanza la cima y cerca de ella el ruido domina; en E2 el tiempo de correlación con D = 0.5 es ~10.
+
+### D26. División del trabajo y reanudación de las corridas
+
+- **Decisión (de los revisores):** Claude escribe código, pruebas y scripts y ejecuta solo pruebas y validaciones pequeñas; los revisores ejecutan las corridas de producción, con una estimación de tiempo con 10 hilos para cada una. El script de producción guarda un archivo por D (E4) y por dt (E3) y salta los que ya existen, salvo con `--rehacer`.
+- **Detalle de implementación (de Claude):** cada archivo se escribe primero con un nombre temporal y luego se renombra con `os.replace` (operación atómica en el mismo sistema de archivos). Así un apagado durante la escritura no deja un `.npz` truncado que la reanudación tomaría por terminado.
+- **Justificación:** con un archivo por D, un apagado solo cuesta el D en curso.
+
+### D27. Una semilla por trayectoria
+
+- **Decisión (de Claude, propuesta en el plan del hito sin objeciones):** cada trayectoria recibe su propia semilla, derivada con `numpy.random.SeedSequence` de la semilla de configuración, y reinicia el generador de Numba al empezar. La referencia NumPy usa `default_rng` (PCG64), un generador distinto.
+- **Alternativas:** un generador por hilo (no reproducible al cambiar el número de hilos).
+- **Justificación:** el resultado es idéntico bit a bit con cualquier número de hilos, lo que importa ahora que el valor por defecto cambió y `--hilos` puede variar entre corridas. Usar generadores distintos en Numba y NumPy hace más independiente la comparación E1.
