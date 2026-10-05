@@ -514,8 +514,8 @@ plt.show()
 # de escape escala como $e^{S_\mathrm{min}}$, con $S_\mathrm{min} = \Delta V/D$, la acción
 # del camino de Onsager-Machlup (§2 del plan). La pendiente exacta en $D\le0.2$ (0.9884 y
 # 0.9900) no es exactamente 1, y eso es un resultado físico, no un error: el prefactor
-# también depende de $D$ (en Kramers, $T = A(D)\,e^{1/D}$ con $A$ que tiende a $2\pi/\sqrt{32}$
-# solo cuando $D\to0$). El ajuste de $\ln T = \ln A(D) + 1/D$ en un intervalo finito absorbe
+# también depende de $D$: en el tiempo exacto, $T = A(D)\,e^{1/D}$, con $A(D)$ que tiende al
+# prefactor de Kramers $2\pi/\sqrt{32}$ solo cuando $D\to0$. El ajuste de $\ln T = \ln A(D) + 1/D$ en un intervalo finito absorbe
 # la variación de $\ln A$ en la pendiente; la pendiente local exacta se acerca a 1 al bajar
 # $D$. La teoría variacional fija el exponente; el prefactor es lo que no captura (§6).
 # Kramers acierta el exponente y queda por debajo del tiempo exacto: $T/T_K$ va de 1.04
@@ -598,10 +598,54 @@ for D in (0.25, 0.15, 0.1):
     mediana, p10, p90 = mediana_y_banda(alineadas)
     tubo[D] = (alineadas, mediana, p10, p90)
     rms = rms_contra_om(malla[criterio], mediana[criterio])
-    i0 = np.argmin(np.abs(malla))
-    print(f"D = {D:<5}: RMS(mediana − x_om) en [−0.5, 0.25] = {rms:.4f}; ancho 10–90 % en t = 0: {p90[i0] - p10[i0]:.3f}; "
-          f"mediana de t_cima − t_alineación = {np.median(datos['t_cima'] - datos['t_alineacion']):.3f}; "
+    print(f"D = {D:<5}: RMS(mediana − x_om) en [−0.5, 0.25] = {rms:.4f}; "
           f"ventanas con NaN al inicio: {100 * np.mean(np.isnan(datos['ventanas'][:, 0])):.2f} %")
+
+# %% [markdown]
+# **Ancho del tubo, lejos de la alineación.** En $t = 0$ todas las trayectorias pasan por
+# $x = -1/\sqrt2$ por construcción: allí el ancho solo mide cuánto avanza la trayectoria en
+# un intervalo de muestreo, del orden de $\sqrt{2D\cdot0.01}$, y no dice nada del tubo. El ancho
+# 10–90 % se mide en $t = -0.25$ (subida) y en $t = -1$ (dentro del pozo), y se divide entre
+# $\sqrt D$: si el tubo es gaussiano alrededor del camino, con varianza proporcional a $D$,
+# ese cociente es aproximadamente constante. En el pozo se compara con la fluctuación de
+# equilibrio armónica, de desviación $\sqrt{D/V''(-1)} = \sqrt{D/8}$ (ancho 10–90 %
+# $\approx 2\cdot1.2816\,\sqrt{D/8}$), y con los cuantiles 10–90 % de la densidad de Boltzmann
+# exacta restringida al pozo izquierdo ($x<0$), que incluye la anarmonía de $V$.
+
+# %%
+def indice(t: float) -> int:
+    return int(np.argmin(np.abs(malla - t)))
+
+
+def ancho_boltzmann_pozo(D: float) -> float:
+    """Ancho 10–90 % de e^{−V/D} restringida a x < 0 (cuantiles por integración numérica)."""
+    xs = np.linspace(-2.5, 0.0, 200_001)
+    cdf = np.cumsum(np.exp(-ref.V(xs) / D))
+    q10, q90 = np.interp([0.1, 0.9], cdf / cdf[-1], xs)
+    return q90 - q10
+
+
+print(f"{'D':>5} | {'t = 0':>7} {'√(2D·0.01)':>10} | {'t = −0.25':>9} {'/√D':>6} | {'t = −1':>7} {'/√D':>6} "
+      f"{'armónico':>9} {'Boltzmann':>9}")
+for D in (0.25, 0.15, 0.1):
+    _, _, p10, p90 = tubo[D]
+    ancho = {t: p90[indice(t)] - p10[indice(t)] for t in (0.0, -0.25, -1.0)}
+    print(f"{D:>5} | {ancho[0.0]:>7.4f} {np.sqrt(2 * D * 0.01):>10.4f} | {ancho[-0.25]:>9.4f} {ancho[-0.25] / np.sqrt(D):>6.3f} | "
+          f"{ancho[-1.0]:>7.4f} {ancho[-1.0] / np.sqrt(D):>6.3f} {2 * 1.2816 * np.sqrt(D / 8):>9.4f} {ancho_boltzmann_pozo(D):>9.4f}")
+
+# %% [markdown]
+# **Tiempo de llegada a la cima.** Cerca de la cima, $x_\mathrm{om}(t)\approx-e^{-4t}$, con
+# $4 = |V''(0)|$. El ruido domina cuando la distancia a la cima es del orden de la
+# fluctuación térmica en la meseta, $\sqrt{2D/|V''(0)|} = \sqrt{D/2}$. Igualando,
+# $e^{-4t^*} = \sqrt{D/2}$, es decir $t^* = \tfrac18\ln(2/D)$, con
+# $1/8 = 1/(2|V''(0)|)$. Es una estimación de orden de magnitud del tiempo que tarda la
+# trayectoria reactiva en llegar a la cima desde la alineación.
+
+# %%
+for D in (0.25, 0.15, 0.1):
+    datos = E4[D][0]
+    medido = np.median(datos["t_cima"] - datos["t_alineacion"])
+    print(f"D = {D:<5}: t* = ln(2/D)/8 = {np.log(2 / D) / 8:.3f}; mediana medida de t_cima − t_alineación = {medido:.3f}")
 
 # %%
 fig, ejes = plt.subplots(1, 3, figsize=(11, 3.6), sharey=True)
@@ -648,19 +692,35 @@ plt.show()
 # %% [markdown]
 # **Verificación.** La desviación cuadrática media entre la mediana y $x_\mathrm{om}$ en
 # $t\in[-0.5, 0.25]$ decrece al disminuir $D$: 0.120 ($D = 0.25$), 0.083 ($D = 0.15$) y
-# 0.058 ($D = 0.1$). La banda 10–90 % en $t = 0$ también se estrecha: 0.066, 0.051 y 0.041.
+# 0.058 ($D = 0.1$). Esa es la evidencia de que el tubo converge al camino.
+#
+# **Ancho del tubo.** En $t=0$ el ancho (0.066, 0.051 y 0.041) coincide con
+# $\sqrt{2D\cdot0.01}$ (0.071, 0.055 y 0.045): es el avance en un intervalo de muestreo y no es
+# evidencia del estrechamiento. El "pellizco" de la figura de densidad en $t = 0$ es
+# consecuencia de la alineación, no física. Lejos de la alineación, el tubo se estrecha
+# como $\sqrt D$: en $t=-0.25$ el ancho es 0.521, 0.415 y 0.333, con ancho$/\sqrt D$ = 1.04,
+# 1.07 y 1.05, aproximadamente constante. En $t=-1$, dentro del pozo, el ancho es 0.488,
+# 0.373 y 0.298 (ancho$/\sqrt D$ = 0.98, 0.96 y 0.94). Supera al armónico, 0.453, 0.351 y
+# 0.287, en un 8 %, 6 % y 4 %, y se acerca a él al bajar $D$: es la anarmonía del pozo. Con
+# la densidad de Boltzmann exacta del pozo, el acuerdo es mejor (0.3765 y 0.2987 en
+# $D = 0.15$ y 0.1). En $D = 0.25$ esa referencia, 0.523, queda un 7 % por encima de lo
+# medido, porque su cola hacia la cima ya pesa. Antes de escapar, la partícula está en
+# equilibrio térmico en el pozo.
 #
 # **Interpretación física.** Antes del origen, las trayectorias reactivas suben desde el pozo
 # por el camino $x_\mathrm{om}$: el escape no es una difusión al azar hacia la cima, sino
 # una excursión coordinada por la ruta de mínima acción, la imagen invertida en el tiempo de
 # la relajación determinista ($\dot x = +V'$). La diferencia está cerca de la cima.
 # $x_\mathrm{om}$ tarda un tiempo infinito en llegar a $x=0$, porque la cima es un punto de
-# equilibrio, mientras que el ruido la alcanza en un tiempo finito. La mediana de
-# $t_\mathrm{cima} - t_\mathrm{alineación}$ es 0.23, 0.31 y 0.38 al bajar $D$: crece
-# aproximadamente como $\ln(1/D)$ (unos 0.17 por unidad de $\ln(1/D)$ entre estos tres $D$), y
-# diverge cuando $D\to0$. Por eso la mediana va por delante de $x_\mathrm{om}$
+# equilibrio, mientras que el ruido la alcanza en un tiempo finito. La estimación
+# $t^* = \frac18\ln(2/D)$ (llegada al punto donde la distancia a la cima es la fluctuación
+# térmica de la meseta) da 0.26, 0.32 y 0.37, frente a las medianas medidas de
+# $t_\mathrm{cima} - t_\mathrm{alineación}$: 0.23, 0.31 y 0.38. El coeficiente
+# $1/8 = 1/(2|V''(0)|)$ lo fija la curvatura de la barrera, y $t^*$ diverge
+# logarítmicamente cuando $D\to0$. Por eso la mediana va por delante de $x_\mathrm{om}$
 # en el tramo final, y el criterio se evalúa donde $x_\mathrm{om}$ describe la subida. A
-# medida que $D$ baja, la mediana converge a $x_\mathrm{om}$ y el tubo se estrecha: es la
+# medida que $D$ baja, la mediana converge a $x_\mathrm{om}$ y el tubo se estrecha como
+# $\sqrt D$: es la
 # concentración de la medida de caminos alrededor del minimizador que predice el método de
 # Laplace (§1 del plan).
 

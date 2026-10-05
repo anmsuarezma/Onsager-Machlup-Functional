@@ -128,7 +128,16 @@ Predicho: frontera desplazada en `δ = 0.5826·√(2D dt)`, y sesgo `T(−1 → 
 - **Kramers frente al exacto:** `T/T_K` va de 1.043 (D = 0.1) a 1.250 (D = 0.5). El exponente es correcto; el prefactor no, a D finito.
 - **Sesgo de la cima sin corregir con dt = 1e-3:** ≈ +4 % e independiente de D (media +3.90 %, entre +3.41 y +4.37 %; predicho entre +3.97 y +4.17 %).
 - **CV fuera del criterio:** 0.991 (D = 0.2), 0.985 (0.25), 0.967 (0.35), 0.931 (0.5). Baja de 1 cuando la barrera deja de ser alta.
-- **E7:** la banda 10-90 % en t = 0 se estrecha (0.066, 0.051, 0.041). La mediana de `t_cima − t_alineación` crece (0.228, 0.313, 0.383; ~0.17 por unidad de ln(1/D)). Ventanas con NaN al inicio: 7.50 % (D = 0.25), 0.50 %, 0.03 %.
+- **E7, ancho del tubo (corregido en la revisión; ver 4.10):** la evidencia de que el tubo converge al camino es el criterio E7 (RMS de la mediana frente a `x_om`). El ancho 10-90 % en t = 0 (0.066, 0.051, 0.041) **no es evidencia del estrechamiento**: en t = 0 todas las trayectorias pasan por −1/√2 por construcción, y ese ancho coincide con el avance en un intervalo de muestreo, √(2D·0.01) = 0.071, 0.055 y 0.045. Lejos de la alineación (D = 0.25, 0.15, 0.1):
+
+  | t | ancho 10-90 % | ancho/√D | referencia |
+  |---|---|---|---|
+  | −0.25 (subida) | 0.521, 0.415, 0.333 | 1.04, 1.07, 1.05 (≈ constante) | — |
+  | −1.0 (pozo) | 0.488, 0.373, 0.298 | 0.98, 0.96, 0.94 | armónico 2·1.2816·√(D/8) = 0.453, 0.351, 0.287 (+8 %, +6 %, +4 %); Boltzmann exacto del pozo (x < 0) = 0.523, 0.3765, 0.2987 |
+
+  El tubo se estrecha como √D. En el pozo, el ancho supera al armónico por la anarmonía y se acerca a él al bajar D. Con la densidad de Boltzmann exacta del pozo coincide en D = 0.15 y 0.1; en D = 0.25 esa referencia queda un 7 % por encima, porque su cola hacia la cima ya pesa.
+- **E7, tiempo de llegada a la cima desde la alineación:** cerca de la cima `x_om(t) ≈ −e^{−4t}`, con 4 = |V″(0)|, y el ruido domina cuando la distancia a la cima es la fluctuación térmica de la meseta, √(2D/|V″(0)|) = √(D/2). La estimación de orden de magnitud `t* = (1/8)·ln(2/D)`, con 1/8 = 1/(2|V″(0)|), da 0.260, 0.324 y 0.374, frente a las medianas medidas de `t_cima − t_alineación`: 0.228, 0.313 y 0.383. Reemplaza el ajuste empírico "~0.17 por unidad de ln(1/D)" de la versión anterior.
+- **E7, ventanas con NaN al inicio:** 7.50 % (D = 0.25), 0.50 % y 0.03 %.
 
 ### 3.5 Réplicas guardadas para el cuaderno (D32)
 
@@ -150,6 +159,11 @@ Predicho: frontera desplazada en `δ = 0.5826·√(2D dt)`, y sesgo `T(−1 → 
    - **Para evitarlo:** `*.log` se ignora en git (D32).
 8. **p bajos de KS en la cima en la réplica de E1** (0.052 y 0.023), y un p = 0.001 en el pozo en 1 de 4 réplicas adicionales de 10⁴ + 10⁴ (investigación en el scratchpad). Se descartó una diferencia sistemática con muestras grandes: 10⁶ trayectorias de Numba frente a 10⁵ de NumPy dan KS p = 0.87 (cima), 0.72 (cima sin corregir), 0.93 (pozo) y 0.95 (pozo sin corregir). Las dos implementaciones coinciden con T exacto dentro de un error estándar (Numba: −0.05 % ± 0.10 % en la cima y −0.09 % ± 0.10 % en el pozo). Los p bajos con muestras de 10⁴ son fluctuaciones.
 9. **E1 y E2 no guardaban datos:** las pruebas no escriben en `results/`. Se agregó E1 a `correr.py` y se corrieron réplicas con semillas propias para las figuras (D32).
+10. **Correcciones de la revisión final** (D33). Los revisores señalaron un error de interpretación y dos precisiones; se corrigieron en el cuaderno y en esta bitácora:
+   - **Error:** el ancho 10-90 % en t = 0 se presentaba como evidencia del estrechamiento del tubo. En t = 0 todas las trayectorias pasan por −1/√2 por construcción de la alineación, así que ese ancho solo mide el avance en un intervalo de muestreo (≈ √(2D·0.01)). Se eliminó como evidencia; el cuaderno explica que el pellizco de la figura de densidad en t = 0 es un efecto de la alineación. El ancho se mide ahora en t = −0.25 y t = −1.0, se reporta dividido entre √D y, en el pozo, se compara con la fluctuación de equilibrio (3.4). La evidencia principal sigue siendo el criterio E7.
+   - **Escala logarítmica de E7:** el ajuste empírico "~0.17 por unidad de ln(1/D)" se reemplazó por la estimación t* = (1/8)·ln(2/D) (3.4).
+   - **B.5:** la frase sobre el prefactor decía "en Kramers, T = A(D) e^{1/D}…". Ahora dice: en el tiempo exacto, T = A(D) e^{1/D}, con A(D) que tiende al prefactor de Kramers 2π/√32 solo cuando D → 0.
+   - Las figuras no cambian: regeneradas, son idénticas byte a byte a las versionadas en `22734bf`.
 
 ## 5. Figuras generadas (`figures/estocastico/`, PDF y PNG, sin fecha de creación)
 
@@ -164,13 +178,13 @@ Las 16 se regeneran idénticas byte a byte desde `results/`.
 | `e5_arrhenius` | ln T frente a 1/D (simulado en ambos destinos, exacto y Kramers) con las pendientes, y `T/T_exacto` frente a D (la simulación en 1; Kramers baja hasta 0.80) |
 | `e6_distribucion_tiempos` | Supervivencia de `t/⟨T⟩` para D = 0.5, 0.25 y 0.1 frente a la exponencial: recta cuando la barrera es alta; se desvía con D = 0.5 (CV = 0.931) |
 | `e7_tubo_reactivo` | Mediana y banda 10-90 % de las ventanas alineadas frente a `x_om`, para D = 0.25, 0.15 y 0.1, con el intervalo del criterio sombreado. Antes de t = 0 la mediana sigue a `x_om`; después va por delante, porque el ruido alcanza la cima en un tiempo finito |
-| `e7_densidad_ventanas` | Densidad 2D (t, x) de las ventanas alineadas: el tubo se estrecha al bajar D |
+| `e7_densidad_ventanas` | Densidad 2D (t, x) de las ventanas alineadas: el tubo se estrecha al bajar D. El "pellizco" en t = 0 es consecuencia de la alineación (todas pasan por −1/√2), no física |
 
 ## 6. Pendientes y dudas para la revisión
 
-- **Etiqueta `hito-01`:** no se creó, según lo pedido; queda para después de la revisión.
-- **Mecanismo del sesgo residual de orden dt** con la corrección. E3 lo establece en la cima (−0.63 % ± 0.11 % con dt = 5e-3), pero no su mecanismo ni su dependencia con D. La estimación simple del calentamiento numérico dentro del pozo (D_eff = D/(1 − 4dt)) predice ≈ −8 %, mucho más de lo medido, así que no es la explicación. Con dt = 1e-3, E4 no muestra sesgo en ningún D.
-- **E7 y el tramo final:** el criterio usa `t ∈ [−0.5, 0.25]`, donde `x_om ≤ −0.345`. La mediana se adelanta a `x_om` cerca de la cima, porque `x_om` tarda un tiempo infinito en llegar. ¿Conviene cuantificar en la parte teórica la escala logarítmica (~0.17 por unidad de ln(1/D)) del tiempo de llegada del ruido a la cima?
+- **Etiqueta `hito-01`:** creada tras la revisión, sobre el commit que incorpora las correcciones de 4.10.
+- **Pregunta abierta: mecanismo del sesgo residual de orden dt** con la corrección de puente. E3 lo establece en la cima (−0.63 % ± 0.11 % con dt = 5e-3), pero no su mecanismo ni su dependencia con D. La estimación simple del calentamiento numérico dentro del pozo (D_eff = D/(1 − 4dt)) predice ≈ −8 %, mucho más de lo medido, así que no es la explicación. **Con dt = 1e-3 no afecta a ningún resultado:** E4 no muestra sesgo en ningún D.
+- **Resuelto en la revisión:** la escala logarítmica del tiempo de llegada a la cima en E7 queda explicada por t* = (1/8)·ln(2/D) (3.4 y 4.10).
 - **Superposición con el camino de la red** (medición 1 del plan): queda para `notebooks/03_integracion/`, cuando exista el Bloque A.
 - **Réplica de E1 en el cuaderno:** usa semillas distintas de la prueba, así que sus p (0.111) no son los de la prueba (0.165 y 0.145). Ambos se reportan.
 - **Paleta:** igual que en el hito 00, el validador de la guía de visualización requiere `node`, que no está instalado. Se usaron los colores de la paleta validada (D16) y la escala secuencial azul, con codificación secundaria (forma del marcador y estilo de línea).
