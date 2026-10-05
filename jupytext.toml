@@ -1,0 +1,2 @@
+# Cada cuaderno se empareja con un .py en formato percent; solo el .py se versiona.
+formats = "ipynb,py:percent"
