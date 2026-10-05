@@ -168,8 +168,8 @@ Colores: los dos primeros de la paleta categórica de referencia, más el estilo
 
 ## 6. Pendientes y dudas para la revisión
 
-- **Verificaciones más allá de la especificación** (D15): la tabla de tiempo medio de primer paso exacto (§9), la diagonalización de H (§8) y las familias reescaladas λ (§4 y §6) no estaban pedidas. Las agregué como verificación numérica independiente con scipy de resultados que sí estaban pedidos. Si prefieren quitarlas, se quitan.
-- **Sugerencia para el bloque estocástico:** la fórmula exacta del tiempo de primer paso da una referencia sin aproximación asintótica para ambas definiciones de "escape". Podría ser mejor punto de comparación que Kramers en D = 0.35 y 0.5. La decisión es de ustedes.
+- **Verificaciones más allá de la especificación** (D15): la tabla de tiempo medio de primer paso exacto (§9), la diagonalización de H (§8) y las familias reescaladas λ (§4 y §6) no estaban pedidas. **Resuelto en la revisión (2026-10-05):** se mantienen las tres, marcadas en el cuaderno como "verificaciones complementarias, fuera de la especificación" (D17).
+- **Pendiente para el hito 01:** el tiempo medio de primer paso exacto queda como candidato a referencia del bloque estocástico (sin aproximación asintótica, para ambas definiciones de "escape"; mejor punto de comparación que Kramers en D = 0.35 y 0.5). Si se incorpora a `referencias.py` se decidirá en el hito 01, no ahora.
 - **Posible verificación futura (no implementada):** el primer autovalor excitado de H, λ₁, debería aproximarse a 2/⟨τ_esc⟩ (relajación entre los dos pozos). Conecta §8 con §9, pero no se pidió.
 - **Paleta:** el validador de paleta de la guía de visualización requiere `node`, que no está instalado. Se usaron colores de una paleta ya validada más codificación secundaria; no se validó en esta máquina.
 - **Pendiente de hitos futuros:** PyTorch y Numba traen su propio runtime de CUDA (*wheels* `nvidia-*` o `cuda-*`). En sus hitos habrá que verificar que ese runtime es compatible con el driver 595.91.07 (CUDA máxima 13.2) y comprobar explícitamente que usan la GPU (CLAUDE.md §12).

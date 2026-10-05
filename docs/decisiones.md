@@ -114,3 +114,13 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Decisión:** azul `#2a78d6` para el escape térmico (línea continua) y naranja `#eb6834` para el instantón (línea discontinua), los dos primeros colores de una paleta categórica de referencia ya validada para daltonismo. El estilo de línea y las etiquetas directas son codificación secundaria. Los potenciales efectivos van en dos paneles, nunca con doble eje Y. Texto en tinta neutra, rejilla tenue.
 - **Alternativa:** los colores por defecto de matplotlib.
 - **Justificación:** se mantiene la identidad de cada experimento en todas las figuras del proyecto. El validador de paleta no se pudo ejecutar (no hay `node`).
+
+## 2026-10-05 — Hito 00: aprobación
+
+### D17. Hito 00 aprobado
+
+- **Decisión:** los revisores aprueban el hito 00 y se etiqueta `hito-00`. Decisiones de la revisión:
+  - **D15 se confirma:** las tres verificaciones extra del cuaderno (familias reescaladas λ en §4 y §6, diagonalización de H en §8, tiempo medio de primer paso exacto en §9) se mantienen, marcadas en el cuaderno como "verificaciones complementarias, fuera de la especificación".
+  - **Tiempo medio de primer paso exacto:** queda como candidato a referencia del bloque estocástico. Si se incorpora a `referencias.py` se decide en el hito 01, no ahora. Anotado como pendiente en la bitácora.
+- **Alternativas:** quitar las verificaciones extra del cuaderno; incorporar ya el tiempo de primer paso a `referencias.py`.
+- **Justificación:** las verificaciones son independientes de sympy y no agregan código a `src/` ni pruebas. Incorporar una referencia nueva al módulo corresponde al hito que la usará.

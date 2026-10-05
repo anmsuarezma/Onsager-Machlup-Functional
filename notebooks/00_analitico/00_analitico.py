@@ -377,7 +377,7 @@ mostrar(r"(\dot x + V')^2 - [(\dot x - V')^2 + 4\dot x V']", sp.simplify(izq - d
 # para cada $D$ (criterio 4). Se integra en $t \in [-10, 10]$: las colas decaen como
 # $e^{16t}$ y $e^{-8t}$, y aportan menos de $e^{-80}$.
 #
-# (b) La cota en acción: la familia de caminos reescalados $x_\lambda(t) = x_\mathrm{om}(\lambda t)$
+# (b) *Verificación complementaria, fuera de la especificación.* La cota en acción: la familia de caminos reescalados $x_\lambda(t) = x_\mathrm{om}(\lambda t)$
 # va de $-1$ a $0$ con $\dot x_\lambda = \lambda V'$. Para ella,
 # $S = \frac{(\lambda+1)^2}{4\lambda D}\int_{-1}^{0} V'dx = \frac{(\lambda+1)^2}{4\lambda}\,\frac1D$,
 # que es mínima (y vale $1/D$) solo en $\lambda = 1$.
@@ -510,7 +510,7 @@ mostrar(r"\tfrac12\dot x^2 + V - [\tfrac12(\dot x - \sqrt{2V})^2 + \dot x\sqrt{2
 
 # %% [markdown]
 # **Verificación numérica (scipy).** (a) `quad` de $\sqrt{2V}$ en $[-1,1]$ (criterio 4).
-# (b) `quad` de $S_E$ sobre el kink reescalado $x_\lambda(\tau) = x_\mathrm{kink}(\lambda\tau)$.
+# (b) *Verificación complementaria, fuera de la especificación.* `quad` de $S_E$ sobre el kink reescalado $x_\lambda(\tau) = x_\mathrm{kink}(\lambda\tau)$.
 # Con $\dot x_\lambda = \lambda\sqrt{2V}$, se obtiene $S_E = \tfrac12(\lambda + 1/\lambda)\,S_0$,
 # mínima solo en $\lambda = 1$.
 
@@ -620,7 +620,8 @@ mostrar(r"\psi_0", schrodinger.psi0())
 mostrar(r"H\psi_0", sp.simplify(schrodinger.hamiltoniano_efectivo(schrodinger.psi0())))
 
 # %% [markdown]
-# **Verificación numérica (scipy).** Se discretiza $H$ en una malla con diferencias
+# **Verificación numérica (scipy). Verificación complementaria, fuera de la especificación.**
+# Se discretiza $H$ en una malla con diferencias
 # centradas (matriz tridiagonal simétrica) y se diagonaliza con `eigh_tridiagonal`. El
 # autovalor más bajo debe ser $\approx 0$, y su autovector debe coincidir con $\psi_0$
 # normalizado. Es independiente de sympy: solo usa $V'$ y $V''$ en numpy.
@@ -679,7 +680,9 @@ print(f"prefactor 2π/√32 = {2*np.pi/np.sqrt(32):.6f}")
 #    cima para completar una transición. **La definición que usará el bloque estocástico no
 #    se decide en este hito.**
 #
-# **Verificación numérica (scipy).** En una dimensión, el tiempo medio de primer paso desde
+# **Verificación numérica (scipy). Verificación complementaria, fuera de la especificación.**
+# El tiempo medio de primer paso exacto es candidato a referencia del bloque estocástico; si
+# se incorpora a `referencias.py` se decide en el hito 01. En una dimensión, el tiempo medio de primer paso desde
 # $x_0 = -1$ hasta un punto absorbente $b$ (con $-\infty$ reflejante) tiene una fórmula
 # exacta:
 # $$ T(b) = \frac1D\int_{-1}^{b} dy\; e^{V(y)/D}\int_{-\infty}^{y} dz\; e^{-V(z)/D}. $$
@@ -857,3 +860,6 @@ plt.show()
 # | Schrödinger | $H = -D\partial^2 + V'^2/4D - V''/2$, $H\psi_0 = 0$ | `eigh_tridiagonal`: $E_0\approx0$ |
 # | Kramers | $\langle\tau_\mathrm{esc}\rangle \approx (2\pi/\sqrt{32})\,e^{1/D}$ | MFPT exacto con `quad` |
 # | OM completo | $\ddot x = V'V'' - D\,V'''$ | — (solo derivación) |
+#
+# Las familias $\lambda$, `eigh_tridiagonal` y el MFPT exacto son verificaciones
+# complementarias, fuera de la especificación (decisión D15).
