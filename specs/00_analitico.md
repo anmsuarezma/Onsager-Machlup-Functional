@@ -74,3 +74,37 @@ QUÉ PRESENTAR AHORA (sin implementar)
 - El índice de secciones del cuaderno.
 - La lista de pruebas, con nombre y qué verifica cada una, mapeada a los 9 criterios.
 - Cualquier ambigüedad o cosa de esta especificación que consideres incorrecta o mal planteada. Dila; no la corrijas por tu cuenta.
+
+=====================================================
+ACLARACIONES APROBADAS (2026-10-04)
+=====================================================
+
+Respuestas de los revisores a las preguntas del plan. Complementan el texto original, que queda sin modificar.
+
+(1) Las ecuaciones de Euler-Lagrange se comparan despejando ẍ.
+
+(2) Para el kink se usa la forma explícita √(2V) = √2(1 − x²), válida en |x| < 1, tanto en el residuo como en S0. Se justifica en el cuaderno: el kink vive en (−1, 1), donde 1 − x² > 0, y la rama positiva es la que va de −1 a +1. La prueba correspondiente verifica además que √(2V) y √2(1 − x²) coinciden en (−1, 1).
+
+(3) solve_ivp parte de t = 0 e integra hacia adelante y hacia atrás: t ∈ [−2, 2] para x_om y τ ∈ [−2, 2] para x_kink, con DOP853, rtol = 1e-12, atol = 1e-14. Si el criterio de 1e-8 falla así, se reporta con los números; no se amplía ni se reduce el intervalo para que pase.
+
+(4) Criterio 9: error absoluto < 1e-12 para V, dV, d2V, x_om, x_kink y S0; error RELATIVO < 1e-12 para S_min y tau_kramers. Malla: x ∈ [−1.5, 1.5] con 301 puntos; t y τ ∈ [−2, 2] con 401 puntos; D ∈ {0.1, 0.15, 0.25, 0.35, 0.5}.
+
+(5) referencias.py se escribe a mano en numpy, NO con lambdify, para que el criterio 9 compare dos implementaciones independientes (sympy y numpy a mano).
+
+(6) Las pruebas contienen escritos los valores esperados de la especificación: son el oráculo independiente. La regla del CLAUDE.md de no duplicar constantes se refiere al código fuente (src/).
+
+(7) En el cuaderno queda escrito que Kramers es una asintótica para D → 0 y que en D = 0.35 y 0.5 se esperan desviaciones en el bloque estocástico.
+
+(8) En el cuaderno se explica que el tiempo para llegar a x = 0 es asintóticamente la mitad del tiempo de transición, porque desde la cima la partícula cae a cada lado con probabilidad ½. La definición que usará el bloque estocástico sigue sin decidirse.
+
+(9) Las identidades y Hψ0 se verifican además numéricamente en puntos aleatorios (o por diferencias finitas), con semilla fija, como verificación complementaria. La verificación simbólica sigue siendo la principal.
+
+(10) Se agrega tests/analitico/test_potencial.py con estos criterios:
+- puntos fijos exactamente {−1, 0, 1}; V″(±1) = 8; V″(0) = −4; ΔV = 1;
+- tasas asintóticas del camino OM: 8 al alejarse de −1 y 4 al llegar a 0, obtenidas como límites con sympy;
+- tasa del kink: 2√2 = √V″(±1);
+- tau_kramers(D) = (2π/√32)·e^(1/D), con error relativo < 1e-12, y prefactor 2π/√32 ≈ 1.1107.
+
+(11) En el cuaderno, τ se reserva para el tiempo imaginario del instantón; el tiempo de escape se escribe τ_esc. La función tau_kramers conserva su nombre, y su docstring aclara la convención.
+
+(12) Las pruebas se escriben primero, a partir de los criterios, y se presentan para revisión. Una vez aprobadas quedan congeladas (CLAUDE.md §5, regla 1); solo entonces se implementan el módulo y el cuaderno.

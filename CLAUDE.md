@@ -46,7 +46,7 @@ Todo el proyecto usa unidades adimensionales y esta notación. No la cambies.
 | Acción mínima térmica | `S_min = ΔV / D` | `1/D` |
 | Acción del instantón | `S0 = ∫ sqrt(2V) dx` en `[-1, 1]` | `4*sqrt(2)/3 ≈ 1.8856180832` |
 
-Estos valores son **la verdad contra la que se valida todo**. Viven en un único lugar del código (`src/taller/analitico/`) y el resto del proyecto los importa. Nunca los copies a mano en otro archivo.
+Estos valores son **la verdad contra la que se valida todo**. Viven en un único lugar del código (`src/taller/analitico/`) y el resto del proyecto los importa. Nunca los copies a mano en otro archivo. Las pruebas de `tests/` contienen deliberadamente los valores esperados de las especificaciones: son el oráculo independiente contra el que se valida el código.
 
 ## 3. Estructura del repositorio
 

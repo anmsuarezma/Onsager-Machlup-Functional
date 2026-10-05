@@ -57,3 +57,21 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
   - `.envrc` en la raíz del repositorio: la ruta personal terminaría en GitHub y no la heredarían otros experimentos del semestre.
   - `export` en `~/.bashrc`: afectaría a todos los proyectos con uv de la máquina.
 - **Justificación:** la variable se hereda en toda la carpeta del curso (este taller y los experimentos futuros) sin versionar rutas personales. Quien clone el repositorio sin la variable obtiene un `.venv` local con las mismas versiones de `uv.lock`, y eso es lo esperado.
+
+### D9. Las pruebas son el oráculo independiente
+
+- **Decisión:** las pruebas de `tests/` escriben explícitamente los valores y expresiones esperados de las especificaciones (`4*sqrt(2)/3`, `V′V″`, `−1/√(1+e^{8t})`…), sin importarlos de `src/`. La regla de "no copiar valores de referencia" del CLAUDE.md §2 se refiere al código fuente; se aclaró allí con una línea (cambio autorizado).
+- **Alternativas:** que las pruebas importen el valor esperado del propio módulo `analitico/`.
+- **Justificación:** una prueba que compara un valor del módulo con otro valor del mismo módulo no verifica nada. El valor escrito en la prueba es el criterio de aceptación de la especificación.
+
+### D10. `referencias.py` escrito a mano en numpy
+
+- **Decisión:** las versiones numéricas de referencia se escriben a mano en numpy, sin `lambdify` y sin importar sympy.
+- **Alternativa:** generarlas con `lambdify` desde las expresiones simbólicas.
+- **Justificación:** el criterio 9 compara entonces dos implementaciones independientes (sympy y numpy a mano). Con `lambdify` se compararía consigo mismo. Además, los bloques estocástico y neuronal importan `referencias.py` sin cargar sympy.
+
+### D11. Interfaz del módulo analítico fijada por las pruebas
+
+- **Decisión:** las pruebas del hito 00 se escriben antes del módulo y fijan su interfaz pública: expresiones en los símbolos `x` (posición), `v` (velocidad `ẋ`), `t`, `tau` (reales) y `D` (positivo), exportados por `potencial.py`. Los lagrangianos e integrales primeras se expresan en `(x, v)`. `ecuacion_el(L)` devuelve `ẍ` como función de `(x, v)`. El operador `hamiltoniano_efectivo(psi)` actúa sobre una expresión en `x`, con la convención `∂ψ/∂t = −Hψ`.
+- **Alternativa:** expresar todo con `Function('x')(t)`, como lo maneja internamente `euler_equations`.
+- **Justificación:** con símbolos planos las pruebas escriben el oráculo de forma directa (por ejemplo `4*x*(x**2 - 1)*(12*x**2 - 4)`) y no dependen de la representación interna de sympy. La conversión a `Function` queda como detalle interno de `variacional.py`.
