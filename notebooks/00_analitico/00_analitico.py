@@ -811,7 +811,9 @@ FIGURAS.mkdir(parents=True, exist_ok=True)
 
 def guardar(fig, nombre: str) -> None:
     for extension in ("pdf", "png"):
-        fig.savefig(FIGURAS / f"{nombre}.{extension}", bbox_inches="tight")
+        # Sin fecha de creación: el mismo dato produce siempre el mismo archivo.
+        fig.savefig(FIGURAS / f"{nombre}.{extension}", bbox_inches="tight",
+                    metadata={"CreationDate": None})
     print("guardada:", FIGURAS.relative_to(RAIZ) / nombre, "(.pdf, .png)")
 
 
