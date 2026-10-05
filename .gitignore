@@ -12,3 +12,6 @@ __pycache__/
 results/**/*.npz
 
 # Nota: figures/ se versiona; no agregar aquí.
+
+# Configuración local de Claude Code (contiene rutas personales)
+.claude/settings.local.json
