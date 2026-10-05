@@ -1,0 +1,27 @@
+[project]
+name = "taller"
+version = "0.1.0"
+description = "Experimentos numéricos del taller de Física Matemática Avanzada: escape térmico (Onsager-Machlup) y tunelamiento (instantón) en un doble pozo."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "matplotlib>=3.11.2",
+    "numpy>=2.5.3",
+    "scipy>=1.18.1",
+    "sympy>=1.14.0",
+]
+
+[build-system]
+requires = ["uv_build>=0.10.11,<0.11"]
+build-backend = "uv_build"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=7.4.0",
+    "jupyterlab>=4.6.4",
+    "jupytext>=1.19.6",
+    "pytest>=9.1.1",
+]

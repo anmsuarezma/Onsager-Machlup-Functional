@@ -1,0 +1,14 @@
+# Entorno
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+
+# Cuadernos: solo se versiona el .py emparejado con jupytext
+*.ipynb
+.ipynb_checkpoints/
+
+# Resultados crudos pesados (los metadatos y resultados pequeños sí se versionan)
+results/**/*.npz
+
+# Nota: figures/ se versiona; no agregar aquí.
