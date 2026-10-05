@@ -80,14 +80,17 @@ def test_e3_error_decrece_con_dt(clave, tabla) -> None:
 
 
 def test_e3_dt_de_produccion() -> None:
-    """dt de producción = mayor dt con error < 0.02 en ambos destinos corregidos; E4 debe usar ese dt."""
+    """E4 usa un dt validado por E3 (aclaración 15, D31): uno de los dt evaluados en E3 cuyo
+    error corregido es < 0.02 en ambos destinos. Un dt menor que el máximo válido está permitido."""
     validos = [
         dt for dt in VALORES_DT_E3
         if all(_error_y_ee(_e3(dt)[0][c], t[D_E3])[0] < ERROR_DT_E3 for c, t in DESTINOS)
     ]
     assert validos, "ningún dt cumple el 2 %: se reporta y se detiene (E3)"
     for D in VALORES_D:
-        assert _e4(D)[1]["parametros"]["dt"] == max(validos), D
+        dt_e4 = _e4(D)[1]["parametros"]["dt"]
+        assert dt_e4 in VALORES_DT_E3, f"D={D}: dt = {dt_e4} no se evaluó en E3"
+        assert dt_e4 in validos, f"D={D}: dt = {dt_e4} no cumple el 2 % en E3 (válidos: {validos})"
 
 
 # --- E4 ---------------------------------------------------------------------------------
