@@ -27,6 +27,24 @@
 # **Notación** (CLAUDE.md §2): $V(x) = (x^2-1)^2$, $D = k_BT/\gamma$ es la intensidad del
 # ruido, $t$ es el tiempo real y $\tau$ el tiempo imaginario del instantón. El tiempo medio
 # de escape se escribe $\tau_\mathrm{esc}$ para no confundirlo con $\tau$.
+#
+# **Correspondencia con el plan del taller.** La numeración de este cuaderno (§0 a §11) es
+# propia. El plan del taller, que usan la parte teórica y las demás herramientas, tiene otra:
+#
+# | Cuaderno | Contenido | Plan del taller |
+# |---|---|---|
+# | §0 | Potencial y equilibrio | §0 Problema físico |
+# | §1 | Lagrangiano de Onsager-Machlup y Euler-Lagrange | §1 Del ruido al funcional; §2 Camino más probable |
+# | §2 | Integral primera y ramas de energía cero | §2 Camino más probable |
+# | §3 | Camino de escape $x_\mathrm{om}(t)$ | §2 Camino más probable |
+# | §4 | Acción mínima $S_\mathrm{min}$ y cota global | §2 Camino más probable |
+# | §5 | Instantón: ecuación de movimiento y kink | §3 Instantón |
+# | §6 | Acción del instantón $S_0$ y cota de Bogomolny | §3 Instantón |
+# | §7 | Potenciales efectivos | §4 Comparación estructural |
+# | §8 | Puente Fokker-Planck → Schrödinger | §4 Comparación estructural |
+# | §9 | Predicción de Kramers | §2 Camino más probable (prefactor de la tasa); referencia del bloque estocástico |
+# | §10 | Onsager-Machlup completo (término jacobiano) | §1 Del ruido al funcional |
+# | §11 | Figuras | §0 (potencial), §2–§3 (caminos), §4 (potenciales efectivos) |
 
 # %%
 from pathlib import Path
@@ -335,7 +353,11 @@ print(f"error máximo |x_num − x_om| en [−2, 2]: {error_primer_orden(ref.dV,
 # **Interpretación física.** El camino tarda un tiempo infinito en salir de $-1$ y en
 # llegar a $0$: ambos son puntos de equilibrio. En la práctica, la partícula fluctúa en el
 # pozo durante un tiempo de orden $\tau_\mathrm{esc}$ y, cuando escapa, lo hace en una
-# excursión rápida de duración $\sim 1/8 + 1/4$ que sigue $x_\mathrm{om}$. Las tasas 8 y 4 son
+# excursión rápida que sigue $x_\mathrm{om}$. La escala $1/8 + 1/4$ de esa excursión es solo
+# indicativa: como la salida y la llegada son exponenciales, la duración real depende
+# logarítmicamente de $D$, según qué tan cerca del pozo y de la cima se considere que empieza
+# y termina la excursión (por ejemplo, a una distancia del orden de la fluctuación térmica
+# $\sim\sqrt D$). Las tasas 8 y 4 son
 # las curvaturas del potencial: la excursión sale del pozo a la velocidad con que se
 # relajaría hacia él, y llega a la cima a la velocidad con que se alejaría de ella.
 
@@ -474,8 +496,9 @@ print(f"(b) ẍ = V' integrada en [−1.5, 1.5]: error máximo frente a x_kink =
 # en **cimas** y la barrera en un **valle**. El instantón es una partícula que parte (en
 # $\tau\to-\infty$) de la cima $-1$, cruza el valle y llega (en $\tau\to+\infty$) a la cima
 # $+1$, sin energía sobrante. La tasa $2\sqrt2 = \sqrt{V''(\pm1)} = \omega$ es la frecuencia del
-# oscilador armónico en el fondo de cada pozo: el ancho del kink, $\sim 1/\omega$, es el
-# "tiempo" de tunelamiento.
+# oscilador armónico en el fondo de cada pozo: $1/\omega$ fija la anchura del kink en tiempo
+# imaginario. No debe confundirse con el "tiempo de tunelamiento" en tiempo real, que es un
+# concepto distinto y físicamente discutido.
 
 # %% [markdown]
 # ---
@@ -643,10 +666,20 @@ for D_val in [0.1, 0.25, 0.5]:
 # **Interpretación física.** $H$ es un hamiltoniano de mecánica cuántica supersimétrica, con
 # "superpotencial" $V'/(2\sqrt D)$. Su estado fundamental, de energía exactamente cero, es la
 # raíz de la distribución de Boltzmann: el equilibrio térmico es el vacío de un problema
-# cuántico. La evolución de Fokker-Planck es la de Schrödinger en tiempo imaginario, y la
-# temperatura $D$ hace el papel de $\hbar$. Por eso el escape térmico y el tunelamiento se
-# tratan con la misma maquinaria variacional: en ambos, un exponente $e^{-S/(\text{parámetro pequeño})}$
-# está dominado por un camino de acción mínima.
+# cuántico. La evolución de Fokker-Planck es la de Schrödinger en tiempo imaginario.
+#
+# **Cuidado con la analogía.** En $H$, la intensidad del ruido $D$ hace un papel análogo a
+# $\hbar$, pero el potencial de ese problema cuántico es $\frac{V'^2}{4D} - \frac{V''}{2}$,
+# **no** $V$. El escape térmico en $V$ corresponde a un problema cuántico en ese otro
+# potencial, no al tunelamiento en $V$ de §5 y §6. La correspondencia, por tanto, no es
+# "$D \leftrightarrow \hbar$ con el mismo $V$". §7 lo muestra gráficamente: el término
+# dominante $V'^2$, invertido, da $U_\mathrm{OM} = -\tfrac12 V'^2$, con cimas en $-1$, $0$
+# y $+1$, mientras que el tunelamiento en $V$ ve $U_E = -V$, con cimas solo en $\pm1$.
+#
+# **Por qué comparten la maquinaria variacional.** La razón es otra: en ambas partes, el
+# peso de una trayectoria es de la forma $e^{-S/(\text{parámetro pequeño})}$, con $D$ en el
+# escape térmico y $\hbar$ en el tunelamiento. En el límite de parámetro pequeño, la integral
+# sobre trayectorias está dominada por el mínimo de la acción.
 
 # %% [markdown]
 # ---

@@ -124,3 +124,15 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
   - **Tiempo medio de primer paso exacto:** queda como candidato a referencia del bloque estocástico. Si se incorpora a `referencias.py` se decide en el hito 01, no ahora. Anotado como pendiente en la bitácora.
 - **Alternativas:** quitar las verificaciones extra del cuaderno; incorporar ya el tiempo de primer paso a `referencias.py`.
 - **Justificación:** las verificaciones son independientes de sympy y no agregan código a `src/` ni pruebas. Incorporar una referencia nueva al módulo corresponde al hito que la usará.
+
+## 2026-10-05 — Hito 00: corrección del cuaderno (`hito-00.1`)
+
+### D18. Corrección de texto del cuaderno analítico después de la aprobación
+
+- **Decisión:** se corrigen cuatro celdas markdown de `notebooks/00_analitico/00_analitico.py`. No cambian código, pruebas ni figuras:
+  1. **§8:** se corrige el error conceptual "D hace el papel de ℏ, y por eso…". El potencial del problema cuántico es V′²/(4D) − V″/2, no V, así que el escape térmico en V no equivale al tunelamiento en V. La maquinaria común se debe a que en ambos casos el peso es e^{−S/parámetro pequeño}.
+  2. **Inicio del cuaderno:** se agrega una tabla de correspondencia entre las secciones del cuaderno (§0 a §11) y las del plan del taller (§0 Problema físico, §1 Del ruido al funcional, §2 Camino más probable, §3 Instantón, §4 Comparación estructural).
+  3. **§5:** "tiempo de tunelamiento" pasa a "anchura del kink en tiempo imaginario".
+  4. **§3:** la duración 1/8 + 1/4 de la excursión se matiza como indicativa, con dependencia logarítmica en D.
+- **Alternativas:** dejar el cuaderno como se aprobó y corregirlo en el hito 01; mover la etiqueta `hito-00`.
+- **Justificación:** el error de §8 contradice un punto central del taller y conviene corregirlo antes de que el bloque estocástico y la parte teórica lo usen como referencia. Se crea la etiqueta nueva `hito-00.1` y `hito-00` se mantiene en el commit aprobado, para conservar la historia de la revisión.

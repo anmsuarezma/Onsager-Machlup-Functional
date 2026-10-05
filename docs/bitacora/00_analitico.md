@@ -149,6 +149,13 @@ Kramers se acerca al tiempo exacto de transición cuando D → 0 (desviación de
    - en dos figuras había etiquetas solapadas con las curvas; se movieron;
    - un párrafo de §7 decía que la segunda derivada de U_OM se anula en −1, 0 y +1; era falso (vale −V″² < 0) y se corrigió antes de la ejecución final.
 7. **Entorno:** `uv python install` dejó un enlace `~/.local/bin/python3.12` en el PATH. Se eliminó con autorización.
+8. **Corrección posterior a la aprobación (2026-10-05, etiqueta `hito-00.1`, D18).** La revisión encontró un error conceptual y tres imprecisiones en celdas markdown del cuaderno. No se cambió código, pruebas ni figuras.
+   - **§8, error conceptual.** El texto decía que "la temperatura D hace el papel de ℏ" y que "por eso" ambas partes usan la misma maquinaria variacional. Era incorrecto. D hace un papel análogo a ℏ, pero el potencial cuántico de H es V′²/(4D) − V″/2 y no V. El escape térmico en V no es el tunelamiento en V, y §7 lo muestra con U_OM frente a U_E. La razón real de la maquinaria común es otra: el peso e^{−S/parámetro pequeño} (D o ℏ) está dominado por el mínimo de la acción. Se conservó lo correcto: el estado fundamental de energía cero es la raíz de Boltzmann, con estructura supersimétrica y superpotencial V′/(2√D).
+   - **Correspondencia con el plan.** Se agregó al inicio una tabla que relaciona las secciones §0 a §11 del cuaderno con las del plan del taller (§0 a §4).
+   - **§5.** "Tiempo de tunelamiento" pasó a ser "anchura del kink en tiempo imaginario", con la aclaración de que el tiempo de tunelamiento en tiempo real es un concepto distinto y discutido.
+   - **§3.** La escala 1/8 + 1/4 de la excursión se presenta como indicativa: la duración real depende logarítmicamente de D, según dónde se fijen el inicio y el fin de la excursión.
+
+   Tras la corrección, el cuaderno se ejecutó desde una sesión limpia sin errores (12.2 s) y `uv run pytest` dio 70 passed en 7.50 s. Al ejecutarlo, los PDF de las figuras solo cambiaron en el metadato `CreationDate`, así que se restauraron las versiones del repositorio.
 
 Todas las pruebas pasaron al primer intento después de implementar el módulo. No se modificó ninguna prueba ni tolerancia después del commit de congelación.
 
