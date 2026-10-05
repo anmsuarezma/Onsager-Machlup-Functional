@@ -7,6 +7,6 @@ N: 100000
 N_por_D:
   0.1: 20000   # aclaración 9: error estadístico relativo ≈ 0.7 %
 D_ventanas: [0.1, 0.15, 0.25]
-# dt de producción: el mayor dt de E3 con error < 0.02 en ambos destinos. Se fija al
-# revisar E3, antes de lanzar E4; correr.py se niega a correr E4 mientras sea null.
-dt: null
+# dt de producción: la regla de E3 (mayor dt con error < 0.02 en ambos destinos) da 0.01;
+# los revisores eligieron 0.001 (D30). correr.py se niega a correr E4 si dt es null.
+dt: 0.001  # D30: elegido por los revisores tras E3 (la regla literal daría 0.01)

@@ -217,3 +217,28 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 ### D29. Metadatos: `arbol_modificado` cuenta los archivos no versionados
 
 - **Decisión (de Claude):** `arbol_modificado` usa `git status --porcelain` completo. La primera versión ignoraba los archivos no versionados y daba `False` con todo el código nuevo sin commit (detectado en la prueba de humo de `correr.py`). `correr.py` avisa al empezar si el árbol está modificado. Los temporales de la escritura atómica (`results/**/.*.tmp`) se ignoran en git, para que un apagado no marque el árbol como modificado.
+
+## 2026-10-05 — Hito 01: resultados de E3 y dt de producción
+
+### D30. dt de producción = 1e-3, no el dt de la regla literal de E3
+
+- **Resultados de E3** (D = 0.25, N = 10⁵ por dt, commit 2f273cf, 10 hilos; error relativo de la media frente a T exacto ± error estándar, en %):
+
+  | dt | cima corregida | pozo corregido | cima sin corregir | pozo sin corregir |
+  |---|---|---|---|---|
+  | 1e-2 | −1.29 ± 0.31 | −0.54 ± 0.31 | +11.36 ± 0.35 | −0.39 ± 0.31 |
+  | 5e-3 | −0.33 ± 0.31 | −0.11 ± 0.31 | +8.74 ± 0.34 | +0.02 ± 0.31 |
+  | 1e-3 | −0.10 ± 0.31 | +0.08 ± 0.31 | +3.71 ± 0.32 | +0.12 ± 0.31 |
+  | 5e-4 | −0.13 ± 0.31 | +0.18 ± 0.31 | +2.56 ± 0.32 | +0.23 ± 0.31 |
+
+  Las pruebas de E3 que no dependen de E4 pasan: los cuatro archivos están completos, y el error decrece con dt en ambos destinos (aclaración 8).
+- **Sesgo sin corregir frente a la corrección de continuidad para barreras discretas:** la barrera efectiva se desplaza δ = 0.5826·√(2D dt) (0.5826 = −ζ(1/2)/√(2π)), y el sesgo predicho es T(−1 → δ)/T(−1 → 0) − 1, evaluado con `tiempo_primer_paso`. Predicho: +12.5 %, +8.9 %, +4.0 % y +2.8 %. Medido: +11.4 %, +8.7 %, +3.7 % y +2.6 %. Escala como √dt. En el mensaje de los revisores el primer valor predicho aparece como +12.6 %; con la evaluación exacta da +12.5 %.
+- **Decisión (de los revisores):** el dt de producción de E4 es 1e-3. La regla de la especificación (mayor dt con error < 2 % en ambos destinos) elige 1e-2, porque los cuatro dt la cumplen.
+- **Justificación (de los revisores):** con dt = 1e-2, la cima corregida tiene un sesgo significativo de −1.29 % (4.2 errores estándar), del orden de dt, atribuible al calentamiento numérico de Euler-Maruyama. Como el tiempo de escape depende de la temperatura a través de e^{ΔV/D}, ese sesgo crecería al disminuir D y con D = 0.1 podría acercarse al 3 % de E4. Con dt = 1e-3 el error es indistinguible de cero y E4 cuesta ~47 min.
+- **Alternativas:** dt = 1e-2 (regla literal, ~5 min); dt = 5e-3 (~9 min).
+- **Investigación de la discrepancia con la validación del puente (de Claude, sin cambiar nada):** la validación (`test_doble_pozo_dt_grueso`, D = 0.25, dt = 5e-3, N = 10⁵) dio −1.02 % ± 0.31 % en el pozo corregido, y E3 con los mismos D, dt y N dio −0.11 % ± 0.31 %.
+  - **Causa: semillas distintas, nada más.** Ambas corridas usan el mismo N y el mismo generador: la validación se ejecutó con el integrador de D28, no con el generador anterior. La validación usa la semilla 707 de `pruebas.yaml`; E3 usa la semilla derivada de 20261006. Reproducir E3 con el código actual da un resultado idéntico bit a bit al archivo.
+  - Con 12 lotes adicionales independientes (semillas 1000-1011, N = 10⁵ cada uno), el pozo corregido promedia **−0.48 % ± 0.07 %** (desviación entre lotes 0.23 %) y la cima corregida −0.63 % ± 0.11 %. Hay un sesgo real de ≈ −0.5 % con dt = 5e-3, que una sola corrida de 10⁵ (error estándar 0.31 %) no resuelve. La validación cayó 1.7 errores estándar por debajo y E3 1.2 por encima: dos fluctuaciones de signo opuesto alrededor del mismo sesgo. La diferencia entre ambas, 0.91 %, son 2.1 errores estándar combinados (√2·0.31 %), no 3.
+  - Este sesgo de ≈ −0.5 % con dt = 5e-3 es coherente con un sesgo de orden dt (≈ −1 % con 1e-2, ≈ −0.1 % con 1e-3), y apoya la elección de dt = 1e-3.
+- **Observación (de Claude):** la estimación ingenua del calentamiento dentro del pozo (en un pozo armónico con V″ = 8, Euler-Maruyama equilibra a D_eff = D/(1 − 4 dt)) predice ≈ −8 % con dt = 5e-3 y D = 0.25, mucho más que el ≈ −0.5 % medido. El mecanismo y su dependencia con D no quedan establecidos por E3; E4 con dt = 1e-3 lo mostrará en todos los D.
+- **Conflicto pendiente con una prueba congelada:** `test_e3_dt_de_produccion` exige que el dt de E4 sea el mayor dt válido según la regla literal (1e-2). Con dt = 1e-3 fallará cuando existan los resultados de E4. No se modifica: queda para decisión de los revisores. Tampoco se modificó `specs/01_estocastico.md`.
