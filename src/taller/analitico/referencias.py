@@ -7,6 +7,7 @@ Notación: tau es el tiempo imaginario del instantón; el tiempo medio de escape
 """
 
 import numpy as np
+from scipy.integrate import quad
 
 DELTA_V = 1.0  # altura de la barrera V(0) − V(−1)
 CURVATURA_POZO = 8.0  # V″(±1)
@@ -63,3 +64,30 @@ def tau_kramers(D: np.ndarray) -> np.ndarray:
     D = np.asarray(D, dtype=float)
     prefactor = 2.0 * np.pi / np.sqrt(CURVATURA_POZO * abs(CURVATURA_BARRERA))
     return prefactor * np.exp(DELTA_V / D)
+
+
+def tiempo_primer_paso(D: float, b: float, x0: float = -1.0) -> float:
+    """Tiempo medio de primer paso exacto de la dinámica de Langevin, de x0 a b > x0 (Bloque B, E0).
+
+    T(x0 → b) = (1/D) ∫_{x0}^{b} dy e^{V(y)/D} ∫_{−∞}^{y} dz e^{−V(z)/D},
+    con frontera absorbente en b y −∞ inalcanzable (reflejante). Es la referencia sin
+    aproximaciones del bloque estocástico: b = 0 es llegar a la cima y b = +1 caer al otro
+    pozo (decisión 1 de la especificación 01). Kramers (`tau_kramers`) es su asintótica para
+    D → 0 en b = +1; en b = 0 el tiempo tiende a la mitad.
+
+    La integral interior se parte en (−∞, −1], que se calcula una vez, y [−1, y]. Los
+    intervalos se cortan en los puntos fijos −1, 0 y +1, donde se concentran los integrandos.
+    """
+    peso = lambda z: np.exp(-V(z) / D)  # e^{−V/D}: densidad de Boltzmann sin normalizar
+    cola = quad(peso, -np.inf, -1.0, epsabs=0, epsrel=1e-13, limit=200)[0]
+
+    def interior(y: float) -> float:
+        return cola + quad(peso, -1.0, y, epsabs=0, epsrel=1e-13, limit=200)[0]
+
+    cortes = [p for p in (-1.0, 0.0, 1.0) if x0 < p < b]
+    nodos = [x0, *cortes, b]
+    exterior = sum(
+        quad(lambda y: np.exp(V(y) / D) * interior(y), a, c, epsabs=0, epsrel=1e-12, limit=200)[0]
+        for a, c in zip(nodos[:-1], nodos[1:])
+    )
+    return exterior / D
