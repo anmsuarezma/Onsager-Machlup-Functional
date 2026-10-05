@@ -1,0 +1,9 @@
+# E1: integrador Numba contra la referencia NumPy (D = 0.35, dt = 1e-3, 10⁴ trayectorias
+# en cada implementación). La prueba lenta usa las semillas de pruebas.yaml; esta corrida
+# usa otras (réplica independiente) y guarda los tiempos para las figuras del cuaderno.
+# Semillas: Numba con el elemento 0 de `semilla`, NumPy con el elemento 1.
+experimento: e1
+semilla: 20261008
+D: 0.35
+dt: 0.001
+N: 10000

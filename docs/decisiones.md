@@ -252,3 +252,11 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Por qué la regla original era incompleta:** el propósito del criterio es garantizar que E4 use un dt validado por E3, no forzar el mayor. La regla "el mayor dt con error < 2 %" no permitía una elección conservadora: un dt menor, también validado, con menos sesgo de discretización (D30). Elegir un dt menor que el máximo válido está permitido.
 - **Alternativas:** mantener la prueba y usar dt = 1e-2; mantenerla y aceptar el fallo documentado.
 - **Especificación:** la regla se precisa en la aclaración (15) de `specs/01_estocastico.md`. El texto original de E3 queda sin modificar.
+
+## 2026-10-05 — Hito 01: trazabilidad de E4 y datos para el cuaderno
+
+### D32. Los registros `*.log` se ignoran en git; E1 y E2 guardan resultados para las figuras
+
+- **Problema:** E4 se generó con `arbol_modificado = True`. Investigado: el único cambio era `log_E4.log`, el registro de consola de la propia corrida, creado sin versionar en la raíz antes de que arrancara Python. Ningún archivo versionado se modificó después de 4a8ce76. Tres archivos de E4 (D = 0.5, 0.35 y 0.25, este con ventanas) se regeneraron con el código de HEAD y son idénticos bit a bit, aunque la corrida original usó 14 hilos (D27). Los resultados son válidos (detalle en la bitácora).
+- **Decisión (de Claude):** `*.log` se agrega a `.gitignore`, para que un registro de consola no marque el árbol como modificado. Alternativa: versionar los registros en `results/`; no se elige porque los metadatos de cada `.npz` ya guardan lo necesario.
+- **E1 y E2 con datos guardados:** las pruebas lentas no escriben en `results/`. Para que las figuras del cuaderno salgan de resultados guardados, `correr.py` corre ahora también E1 (`configs/estocastico/e1_validacion.yaml`) y E2 (`e2_boltzmann.yaml`), con semillas propias distintas de las de `pruebas.yaml`: son réplicas independientes de las pruebas, no los mismos números.

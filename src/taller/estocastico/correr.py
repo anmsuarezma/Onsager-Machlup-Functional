@@ -1,4 +1,4 @@
-"""Corridas de producción del Bloque B (E2, E3, E4) desde un archivo de configuración.
+"""Corridas del Bloque B (E1, E2, E3, E4) desde un archivo de configuración.
 
 Uso:
     uv run python -m taller.estocastico.correr configs/estocastico/e3_convergencia_dt.yaml [--hilos N] [--rehacer]
@@ -24,6 +24,7 @@ from taller.estocastico.configuracion import (
 )
 from taller.estocastico.guardado import RAIZ, guardar_resultado, metadatos_corrida
 from taller.estocastico.integrador import simular_equilibrio, simular_escape
+from taller.estocastico.referencia_numpy import simular_escape_numpy
 
 RESULTADOS = RAIZ / "results" / "estocastico"
 COMUN = RAIZ / "configs" / "estocastico" / "comun.yaml"
@@ -110,6 +111,22 @@ def main(argv: list[str] | None = None) -> None:
                 continue
             ventanas = D in config["D_ventanas"]
             _correr_escape(ruta, D, config["dt"], n_trayectorias(config, D), semilla, i, ventanas, info_hilos, config)
+
+    elif experimento == "e1":
+        ruta = RESULTADOS / "e1_validacion.npz"
+        if not debe_correr(ruta, args.rehacer):
+            print(f"  {ruta.name}: ya existe, se salta")
+            return
+        D, dt, N = config["D"], config["dt"], config["N"]
+        semilla_numba, semilla_numpy = _semilla_elemento(semilla, 0), _semilla_elemento(semilla, 1)
+        numba_ = simular_escape(D, dt, semillas_trayectorias(semilla_numba, N))
+        numpy_ = simular_escape_numpy(D, dt, N, semilla_numpy)
+        datos = {f"{prefijo}_{k}": v for prefijo, r in (("numba", numba_), ("numpy", numpy_))
+                 for k, v in r.items() if k != "t_alineacion"}
+        parametros = {"experimento": "e1", "D": D, "dt": dt, "N": N,
+                      "semilla_numba": semilla_numba, "semilla_numpy": semilla_numpy}
+        guardar_resultado(ruta, datos, metadatos_corrida(parametros, semilla, info_hilos))
+        print(f"  {ruta.name}: guardado", flush=True)
 
     elif experimento == "e2":
         ruta = RESULTADOS / "e2_boltzmann.npz"

@@ -17,3 +17,6 @@ results/**/.*.tmp
 
 # Configuración local de Claude Code (contiene rutas personales)
 .claude/settings.local.json
+
+# Registros de las corridas (salida de consola redirigida); quedan solo en local
+*.log
