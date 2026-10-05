@@ -111,7 +111,7 @@ Respuestas de los revisores al plan del hito y a sus preguntas. Complementan el 
 
 (10) E5. El ajuste se hace con ambos destinos. Las pendientes exactas en D ≤ 0.2 (0.9884 para el pozo, 0.9900 para la cima) se reportan como resultado físico: en ese rango de D, las correcciones al prefactor desvían la pendiente de Arrhenius de ΔV = 1.
 
-(11) E7. La ventana se extiende hasta t_cima + 0.5: muestras en t_cima − 3 + 0.01·k, k = 0, ..., 350. El criterio de la desviación cuadrática media se evalúa en t ∈ [−0.5, 0.25], donde x_om ≤ −0.35. Razón: x_om solo describe la subida y nunca alcanza la cima; cerca de la cima la deriva se anula, el ruido domina y el tubo es más ancho. Las figuras muestran la ventana completa.
+(11) E7. La ventana se extiende hasta t_cima + 0.5: muestras en t_cima − 3 + 0.01·k, k = 0, ..., 350. El criterio de la desviación cuadrática media se evalúa en t ∈ [−0.5, 0.25], donde x_om ≤ x_om(0.25) = −1/√(1 + e²) ≈ −0.345 (corregido en la revisión de las pruebas: no −0.35, valor que x_om alcanza en t ≈ 0.246). Razón: x_om solo describe la subida y nunca alcanza la cima; cerca de la cima la deriva se anula, el ruido domina y el tubo es más ancho. Las figuras muestran la ventana completa.
 
 (12) Las muestras de una ventana anteriores a t = 0 (cuando t_cima < 3) se guardan como NaN y la mediana se calcula con nanmedian.
 

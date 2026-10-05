@@ -190,7 +190,7 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 ### D25. Criterios de E3, E5 y E7, y parámetros de E2 y E4
 
 - **Decisión (de los revisores):** E3 con N = 10⁵ y monotonía exigida solo entre los dt con error > 2 errores estándar; E4 con N = 2·10⁴ en D = 0.1; E5 con ambos destinos, reportando las pendientes exactas 0.9884 (pozo) y 0.9900 (cima); ventana de E7 hasta t_cima + 0.5 (351 muestras) con el criterio RMS en t ∈ [−0.5, 0.25]; NaN y nanmedian para muestras anteriores a t = 0; E2 con 10⁵ trayectorias, equilibrado hasta t = 50, 20 muestras separadas 5.0 e intervalos de 0.05.
-- **Justificación:** ver las aclaraciones (8)-(13) de `specs/01_estocastico.md`. En particular, en E7 x_om nunca alcanza la cima y cerca de ella el ruido domina; en E2 el tiempo de correlación con D = 0.5 es ~10.
+- **Justificación:** ver las aclaraciones (8)-(13) de `specs/01_estocastico.md`. En particular, en E7 x_om nunca alcanza la cima y cerca de ella el ruido domina; en [−0.5, 0.25] se cumple x_om ≤ x_om(0.25) ≈ −0.345 (la primera versión de la aclaración decía −0.35, valor que x_om alcanza en t ≈ 0.246; corregido en la revisión de las pruebas, el intervalo no cambia). En E2 el tiempo de correlación con D = 0.5 es ~10.
 
 ### D26. División del trabajo y reanudación de las corridas
 

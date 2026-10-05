@@ -1,0 +1,11 @@
+# Semillas de las pruebas del hito 01 (tests/estocastico/).
+# Fijadas antes de implementar y congeladas junto con las pruebas: no se cambian para que
+# una prueba pase (CLAUDE.md §5).
+semillas:
+  integrador: 101          # test_integrador.py: corrida corta (D = 0.35, 256 trayectorias)
+  reproducibilidad: 202    # test_integrador.py: igualdad bit a bit con 1 y 4 hilos
+  e1_numba: 303            # E1: integrador Numba
+  e1_numpy: 404            # E1: referencia NumPy
+  e2: 505                  # E2: equilibrio de Boltzmann
+  puente_browniano: 606    # validación del puente: browniano sin deriva
+  puente_doble_pozo: 707   # validación del puente: doble pozo con dt = 5e-3

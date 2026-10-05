@@ -19,6 +19,7 @@ build-backend = "uv_build"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+markers = ["lento: validaciones estadísticas de varios segundos (se excluyen con -m 'not lento')"]
 
 [dependency-groups]
 dev = [
