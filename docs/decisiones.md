@@ -203,3 +203,17 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Decisión (de Claude, propuesta en el plan del hito sin objeciones):** cada trayectoria recibe su propia semilla, derivada con `numpy.random.SeedSequence` de la semilla de configuración, y reinicia el generador de Numba al empezar. La referencia NumPy usa `default_rng` (PCG64), un generador distinto.
 - **Alternativas:** un generador por hilo (no reproducible al cambiar el número de hilos).
 - **Justificación:** el resultado es idéntico bit a bit con cualquier número de hilos, lo que importa ahora que el valor por defecto cambió y `--hilos` puede variar entre corridas. Usar generadores distintos en Numba y NumPy hace más independiente la comparación E1.
+
+## 2026-10-05 — Hito 01: implementación
+
+### D28. Generador xoshiro256** propio en Numba, con semillas de 64 bits
+
+- **Problema:** el plan (D27) reiniciaba el generador de Numba (`np.random.seed`, MT19937) con la semilla de cada trayectoria, pero ese generador solo acepta semillas de 32 bits. Con 10⁵ trayectorias se esperan ~1.2 colisiones (N²/2³³): trayectorias idénticas. Se detectó al implementar, antes de usarlo.
+- **Decisión (de Claude):** `semillas_trayectorias` devuelve semillas de 64 bits (`SeedSequence.generate_state(N, uint64)`, con detección de colisiones), y el integrador usa un generador propio por trayectoria: xoshiro256** iniciado con splitmix64 (el método que recomiendan sus autores), con normales por el método polar de Marsaglia. La interfaz y las pruebas congeladas no cambian. La referencia NumPy sigue con PCG64.
+- **Validación antes de usarlo (scratchpad):** los bits de splitmix64 y xoshiro256** coinciden con una implementación independiente en Python puro (3 semillas, 1000 salidas), y splitmix64(0) da el valor publicado 0xe220a8397b1dcdaf. Con 2·10⁶ normales: media +0.00018 (EE 0.00071), varianza 0.99938, KS contra N(0, 1) con p = 0.70, correlación consecutiva −0.0003. Entre 200 corrientes, la correlación máxima es |r| = 0.064, la esperada por azar.
+- **Alternativas:** MT19937 de Numba con semillas de 32 bits (colisiones); un generador por hilo (no reproducible al cambiar los hilos); `np.random.Generator` dentro de Numba (un objeto por trayectoria no cabe en un prange).
+- **Efecto en el rendimiento (10 hilos, capa tbb):** 3.9·10⁸ pasos/s sin ventanas y 3.25·10⁸ con ventanas, frente a 1.6·10⁸ del integrador de prueba con MT19937 (D23). Las estimaciones de tiempo se rehacen con estos valores.
+
+### D29. Metadatos: `arbol_modificado` cuenta los archivos no versionados
+
+- **Decisión (de Claude):** `arbol_modificado` usa `git status --porcelain` completo. La primera versión ignoraba los archivos no versionados y daba `False` con todo el código nuevo sin commit (detectado en la prueba de humo de `correr.py`). `correr.py` avisa al empezar si el árbol está modificado. Los temporales de la escritura atómica (`results/**/.*.tmp`) se ignoran en git, para que un apagado no marque el árbol como modificado.
