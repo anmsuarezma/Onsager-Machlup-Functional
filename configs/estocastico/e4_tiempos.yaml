@@ -1,0 +1,12 @@
+# E4-E7: tiempos de escape para todos los D (aclaraciones 9 y 11). Un archivo por D en
+# results/estocastico/e4_D{D:.3f}.npz. Las ventanas de E7 se guardan solo en D_ventanas.
+experimento: e4
+semilla: 20261007
+D: [0.1, 0.125, 0.15, 0.2, 0.25, 0.35, 0.5]
+N: 100000
+N_por_D:
+  0.1: 20000   # aclaración 9: error estadístico relativo ≈ 0.7 %
+D_ventanas: [0.1, 0.15, 0.25]
+# dt de producción: el mayor dt de E3 con error < 0.02 en ambos destinos. Se fija al
+# revisar E3, antes de lanzar E4; correr.py se niega a correr E4 mientras sea null.
+dt: null

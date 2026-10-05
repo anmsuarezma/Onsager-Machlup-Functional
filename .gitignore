@@ -10,6 +10,8 @@ __pycache__/
 
 # Resultados crudos pesados (los metadatos y resultados pequeños sí se versionan)
 results/**/*.npz
+# Temporales de una escritura atómica interrumpida (D26)
+results/**/.*.tmp
 
 # Nota: figures/ se versiona; no agregar aquí.
 

@@ -1,0 +1,4 @@
+# Valores comunes a todas las corridas del Bloque B.
+# 10 hilos por defecto (D23, reemplaza a D22): la máquina se ha apagado bajo carga.
+# La bandera --hilos de correr.py tiene prioridad.
+hilos: 10

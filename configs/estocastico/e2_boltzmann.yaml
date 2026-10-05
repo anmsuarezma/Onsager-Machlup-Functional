@@ -1,0 +1,12 @@
+# E2: equilibrio de Boltzmann (aclaración 13). Lo ejecuta la prueba lenta
+# test_validacion_estocastica.py, que toma su semilla de pruebas.yaml; este archivo
+# documenta los parámetros y sirve para correrlo desde correr.py.
+experimento: e2
+semilla: 20261005
+D: 0.5
+dt: 0.001
+N: 100000
+t_equilibrio: 50.0
+intervalo: 5.0
+n_muestras: 20
+ancho_intervalo: 0.05
