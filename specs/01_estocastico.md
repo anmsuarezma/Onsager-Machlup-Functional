@@ -73,3 +73,17 @@ QUÉ PRESENTAR AHORA (sin implementar)
 - Cualquier ambigüedad o criterio que consideres mal planteado. Dilo; no lo corrijas por tu cuenta.
 
 Después escribe las pruebas, con valores esperados escritos explícitamente (oráculo independiente: nada calculado con el mismo código que se prueba), muéstramelas y detente. No implementes hasta que las apruebe.
+
+=====================================================
+ACLARACIONES APROBADAS (2026-10-05)
+=====================================================
+
+Decisiones de los revisores posteriores a la especificación (registradas en docs/decisiones.md, D19-D22). Complementan el texto original, que queda sin modificar.
+
+(1) Cómputo en CPU, no en GPU (D19). La decisión de diseño 5 se sustituye: la producción usa Numba en CPU (@njit(parallel=True), con prange sobre trayectorias) y se mantiene la implementación de referencia en NumPy. Cada iteración del prange integra una trayectoria completa y registra sus observables sobre la marcha. Donde el texto dice "kernel CUDA" (decisión 5, E1, QUÉ PRESENTAR) debe leerse "integrador Numba en CPU". El límite de 12 GB de la GPU no aplica; la estimación de memoria se hace contra la RAM.
+
+(2) Metadatos (D19, D22). En lugar de la versión de CUDA, cada resultado .npz guarda: número de hilos, capa de hilos de Numba y versiones de numpy, numba y llvmlite, además de lo ya pedido (parámetros, semilla, fecha y hash del commit).
+
+(3) numpy fijado en >=2.4,<2.5 (D20). La regresión del hito 00 con numpy 2.4.6 se hizo antes de empezar este hito: 70 pruebas pasan, los valores clave del cuaderno son idénticos bit a bit y las figuras, byte a byte.
+
+(4) Hilos (D22). 16 hilos por defecto (8 núcleos con hyperthreading), no los 20 de la máquina. El valor va en la configuración; la bandera --hilos de los scripts tiene prioridad. Se aplica con numba.set_num_threads.
