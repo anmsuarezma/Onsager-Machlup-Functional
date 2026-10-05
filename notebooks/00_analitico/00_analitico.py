@@ -42,7 +42,7 @@
 # | §6 | Acción del instantón $S_0$ y cota de Bogomolny | §3 Instantón |
 # | §7 | Potenciales efectivos | §4 Comparación estructural |
 # | §8 | Puente Fokker-Planck → Schrödinger | §4 Comparación estructural |
-# | §9 | Predicción de Kramers | §2 Camino más probable (prefactor de la tasa); referencia del bloque estocástico |
+# | §9 | Predicción de Kramers | §0 Problema físico (respuesta esperada) y §6 Discusión (prefactores); referencia del Bloque B |
 # | §10 | Onsager-Machlup completo (término jacobiano) | §1 Del ruido al funcional |
 # | §11 | Figuras | §0 (potencial), §2–§3 (caminos), §4 (potenciales efectivos) |
 
@@ -621,7 +621,9 @@ for nombre, f in [("U_OM", f_U_om), ("U_E", f_U_E)]:
 # ## §8 Puente Fokker-Planck → Schrödinger
 #
 # **Objetivo.** Mostrar que la dinámica de la probabilidad térmica es una ecuación de
-# Schrödinger en tiempo imaginario, el puente formal entre las dos partes del taller.
+# Schrödinger en tiempo imaginario: el mapeo conecta la dinámica térmica con un problema
+# cuántico en el potencial $\frac{V'^2}{4D} - \frac{V''}{2}$ (no con el tunelamiento en $V$
+# de §5 y §6), como se explica en la interpretación de esta sección.
 #
 # **Resultado esperado.** Con $p = e^{-V/2D}\,\psi$, la ecuación de Fokker-Planck se
 # convierte en $\partial_t\psi = -H\psi$, con

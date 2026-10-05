@@ -157,6 +157,10 @@ Kramers se acerca al tiempo exacto de transición cuando D → 0 (desviación de
 
    Tras la corrección, el cuaderno se ejecutó desde una sesión limpia sin errores (12.2 s) y `uv run pytest` dio 70 passed en 7.50 s. Al ejecutarlo, los PDF de las figuras solo cambiaron en el metadato `CreationDate`, así que se restauraron las versiones del repositorio.
 
+   **Continuación de D18 (2026-10-05, sin etiqueta nueva).** Dos ajustes de texto más, también en celdas markdown:
+   - El objetivo de §8 ya no dice "el puente formal entre las dos partes del taller". Ahora dice que el mapeo conecta la dinámica térmica con un problema cuántico en el potencial V′²/(4D) − V″/2, no con el tunelamiento en V.
+   - En la tabla de correspondencia, la fila de §9 (Kramers) pasa a "§0 Problema físico (respuesta esperada) y §6 Discusión (prefactores); referencia del Bloque B".
+
 Todas las pruebas pasaron al primer intento después de implementar el módulo. No se modificó ninguna prueba ni tolerancia después del commit de congelación.
 
 ## 5. Figuras generadas
