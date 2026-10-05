@@ -91,3 +91,26 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Decisión:** las expresiones esperadas (`V`, `V′`, `V″`, `V‴`, soluciones cerradas, condiciones iniciales, lados derechos de las EDO, `S0`, `S_min`, `⟨τ_esc⟩`) y los símbolos se escriben a mano en `oraculo.py`, que no importa nada de `taller`. Las pruebas solo importan del módulo la cantidad que verifican.
 - **Alternativa:** `conftest.py`, sugerido por los revisores.
 - **Justificación:** pytest desaconseja importar desde `conftest.py`, que está pensado para *fixtures*; un módulo normal se importa sin ambigüedad. El criterio 9 es la única excepción deliberada: compara sympy contra numpy, ambos del módulo (D10).
+
+## 2026-10-05 — Hito 00: implementación
+
+### D14. Soluciones cerradas por separación de variables con primitiva real verificada
+
+- **Decisión:** `x_om` y `x_kink` se obtienen con `resolver_separable`: s = ∫ dy / rhs(y) desde el origen fijado. La primitiva de sympy (fracciones simples, con `log` complejos) se convierte en real reemplazando `log(z)` por `log(|z|)` según el signo de z en el intervalo físico, y se verifica derivándola. Entre las raíces de la ecuación implícita se elige la que cumple la condición inicial.
+- **Alternativas:** `dsolve` con `ics` (falla: `NotImplementedError: Initial conditions produced too many solutions for constants`); escribir a mano la primitiva (sería copiar el resultado).
+- **Justificación:** el resultado se deriva, no se copia, y cada paso se verifica.
+
+### D15. Verificaciones numéricas adicionales en el cuaderno
+
+- **Decisión:** además de lo pedido, el cuaderno incluye:
+  - las familias reescaladas `x(λt)`, que ilustran que la cota de acción se satura solo en el minimizador;
+  - la diagonalización de H discretizado (`eigh_tridiagonal`) como verificación de `Hψ0 = 0`;
+  - el tiempo medio de primer paso exacto en una dimensión (`quad` anidado) como verificación de Kramers y de la razón ½ entre llegar a la cima y transitar.
+- **Alternativa:** limitarse a `quad` y `solve_ivp`.
+- **Justificación:** la especificación pide contrastar cada resultado simbólico con una verificación numérica independiente con scipy. Para `Hψ0` y Kramers, estas son las verificaciones naturales. No se agregan pruebas ni código a `src/`: viven solo en el cuaderno. Se señalan en la bitácora por si los revisores prefieren quitarlas.
+
+### D16. Estilo de las figuras
+
+- **Decisión:** azul `#2a78d6` para el escape térmico (línea continua) y naranja `#eb6834` para el instantón (línea discontinua), los dos primeros colores de una paleta categórica de referencia ya validada para daltonismo. El estilo de línea y las etiquetas directas son codificación secundaria. Los potenciales efectivos van en dos paneles, nunca con doble eje Y. Texto en tinta neutra, rejilla tenue.
+- **Alternativa:** los colores por defecto de matplotlib.
+- **Justificación:** se mantiene la identidad de cada experimento en todas las figuras del proyecto. El validador de paleta no se pudo ejecutar (no hay `node`).
