@@ -97,7 +97,7 @@ Respuestas de los revisores a las preguntas del plan. Complementan el texto orig
 
 (8) En el cuaderno se explica que el tiempo para llegar a x = 0 es asintóticamente la mitad del tiempo de transición, porque desde la cima la partícula cae a cada lado con probabilidad ½. La definición que usará el bloque estocástico sigue sin decidirse.
 
-(9) Las identidades y Hψ0 se verifican además numéricamente en puntos aleatorios (o por diferencias finitas), con semilla fija, como verificación complementaria. La verificación simbólica sigue siendo la principal.
+(9) Las identidades y Hψ0 se verifican además numéricamente, como verificación complementaria, en una malla DETERMINISTA (sin aleatoriedad ni semilla) de espaciado irregular que NO pasa por los puntos fijos −1, 0 y +1, donde V′ = 0 y las identidades se cumplirían trivialmente; Hψ0 se evalúa por diferencias finitas. La malla se documenta en la prueba. La verificación simbólica sigue siendo la principal. [Corregida el 2026-10-05: la versión anterior decía "puntos aleatorios con semilla fija".]
 
 (10) Se agrega tests/analitico/test_potencial.py con estos criterios:
 - puntos fijos exactamente {−1, 0, 1}; V″(±1) = 8; V″(0) = −4; ΔV = 1;

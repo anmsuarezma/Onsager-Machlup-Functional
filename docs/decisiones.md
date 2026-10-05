@@ -75,3 +75,19 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Decisión:** las pruebas del hito 00 se escriben antes del módulo y fijan su interfaz pública: expresiones en los símbolos `x` (posición), `v` (velocidad `ẋ`), `t`, `tau` (reales) y `D` (positivo), exportados por `potencial.py`. Los lagrangianos e integrales primeras se expresan en `(x, v)`. `ecuacion_el(L)` devuelve `ẍ` como función de `(x, v)`. El operador `hamiltoniano_efectivo(psi)` actúa sobre una expresión en `x`, con la convención `∂ψ/∂t = −Hψ`.
 - **Alternativa:** expresar todo con `Function('x')(t)`, como lo maneja internamente `euler_equations`.
 - **Justificación:** con símbolos planos las pruebas escriben el oráculo de forma directa (por ejemplo `4*x*(x**2 - 1)*(12*x**2 - 4)`) y no dependen de la representación interna de sympy. La conversión a `Function` queda como detalle interno de `variacional.py`.
+
+## 2026-10-05 — Hito 00: congelación de las pruebas
+
+### D12. Verificación numérica complementaria en malla determinista irregular
+
+- **Decisión:** la verificación numérica de las identidades y de `Hψ0 = 0` (aclaración 9) usa una malla determinista `x_k = a + (b−a)·{k·φ mod 1}`, con `φ` la razón áurea (y `√2 − 1` para `v`). Se eliminan los puntos a menos de 0.01 de −1, 0 y +1. `Hψ0` se evalúa por diferencias centradas y se exige residuo relativo < 1e-4 con h = 1e-4 y convergencia como h² (factor > 50 entre h = 1e-3 y h = 1e-4).
+- **Alternativas:**
+  - (b) puntos aleatorios con semilla en `configs/`;
+  - una malla uniforme (`linspace`), que pasa por 0 y ±1 o queda simétrica alrededor de ellos.
+- **Justificación:** sin aleatoriedad no hace falta semilla ni crear `configs/` en este hito (CLAUDE.md §6). En los puntos fijos `V′ = 0`, y las identidades se cumplirían trivialmente. Una sucesión de baja discrepancia cubre el intervalo con espaciado irregular. Las tolerancias de diferencias finitas se fijaron tras medir el residuo en el scratchpad (~5e-6 con h = 1e-4).
+
+### D13. Oráculo de las pruebas en `tests/analitico/oraculo.py`
+
+- **Decisión:** las expresiones esperadas (`V`, `V′`, `V″`, `V‴`, soluciones cerradas, condiciones iniciales, lados derechos de las EDO, `S0`, `S_min`, `⟨τ_esc⟩`) y los símbolos se escriben a mano en `oraculo.py`, que no importa nada de `taller`. Las pruebas solo importan del módulo la cantidad que verifican.
+- **Alternativa:** `conftest.py`, sugerido por los revisores.
+- **Justificación:** pytest desaconseja importar desde `conftest.py`, que está pensado para *fixtures*; un módulo normal se importa sin ambigüedad. El criterio 9 es la única excepción deliberada: compara sympy contra numpy, ambos del módulo (D10).
