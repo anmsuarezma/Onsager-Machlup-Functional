@@ -1,6 +1,6 @@
 # Hito 02 — Bloque A reducido: la red variacional
 
-Especificación: `specs/02_neuronal.md` (texto de los revisores, tal cual). Fecha: 2026-10-05; revisión de dependencias y reentrenamiento en CPU tras el apagado: 2026-10-06 (sección 7). Decisiones: D34-D41 de `docs/decisiones.md`.
+Especificación: `specs/02_neuronal.md` (texto de los revisores, tal cual). Fecha: 2026-10-05; revisión de dependencias y reentrenamiento en CPU tras el apagado: 2026-10-06 (sección 7). Decisiones: D34-D43 de `docs/decisiones.md`.
 
 ## 0. Objetivo y resultado físico que verifica
 
@@ -59,11 +59,11 @@ Grupo `neuronal` nuevo (D34, reemplazado por D38 en la revisión de dependencias
 - `test_configuracion_neuronal.py`: parámetros de la especificación y semillas.
 - `test_red_ansatz.py`: fronteras exactas, camino inicial recto, ẋ por autograd frente a diferencias finitas, float64, número de parámetros, semilla reproducible y que la red no impone simetría.
 - `test_accion.py`: funcionales contra valores escritos a mano (x_om → 1; recta del escape → 1991/840; reposo → 0; kink → S0; recta del instantón → 1/4 + 64/15).
-- `test_criterios_neuronal.py`: criterios de aceptación, recalculados con numpy desde el camino guardado, sin usar `taller.neuronal`.
+- `test_criterios_neuronal.py`: criterios de aceptación, recalculados con numpy desde el camino guardado, sin usar `taller.neuronal`. Desde D42, el RMS del escape se evalúa en la intersección de [−1, 0.5] con el dominio, con el núcleo [−0.5, 0.5] entero dentro.
 
 - `test_dispositivo.py` (D39): selección automática y forzada, float64 en cpu y cuda, float32 con aviso en mps, bandera, metadatos y `test_el_calculo_corre_en_la_gpu` (se omite sin GPU CUDA).
 
-Única modificación de pruebas congeladas: el renombre autorizado `T` → `horizonte` (D40, commit `ce6b063`), sin cambiar valores ni tolerancias.
+Modificaciones autorizadas de pruebas congeladas: el renombre `T` → `horizonte` (D40, commit `ce6b063`) y el RMS del escape sobre la intersección con el dominio (D42). Ninguna cambia valores esperados ni tolerancias.
 
 ### 2.4 Cuaderno `notebooks/02_neuronal/02_neuronal.py`
 
@@ -137,9 +137,9 @@ Regeneradas desde los resultados vigentes (CPU, `d8dc92d`); dos ejecuciones segu
 ## 6. Pendientes y dudas para la revisión
 
 - **Etiqueta `hito-02`:** no se creó, según lo pedido.
-- **Medición de tiempos en CUDA: pendiente** (D41). Los tiempos de la sección 3.2 son solo de CPU. Los seis resultados entrenados en la GPU antes del apagado se conservan en `results/neuronal/previos_apagado/cuda/` (39.6-56.7 s por red, con 10 hilos en el anfitrión), pero no hay una comparación en CPU completa hecha en las mismas condiciones, así que no se reportan como medición.
-- **Fragilidad del criterio RMS del escape:** con el horizonte T_h = 3, la ventana alineada [−1, 0.5] solo cabe si el cruce cae en t ≥ −2. El cruce lo fija el modo casi plano de traslación y depende del orden de las sumas: en CPU queda en −1.9993/−1.9999 (pasa por 7e-4/1.4e-4), en GPU en −2.0007 (falla). No es un error del camino (RMS y acción están igual de bien), pero el criterio, tal como está, no es robusto al dispositivo ni al número de hilos. No cambié la prueba, la tolerancia, el horizonte ni la semilla; ¿cómo quieren tratarlo?
-- **Hilos de Numba:** D41 limita PyTorch a 8 hilos; las pruebas del bloque estocástico siguen con los 10 hilos de Numba de D23. ¿Se limita también Numba?
+- **Medición de tiempos en CUDA: fuera del alcance de este hito** (D43): no responde ninguna pregunta física del taller. La opción `--dispositivo` sigue funcional. Antes se había dejado como pendiente (D41). Los tiempos de la sección 3.2 son solo de CPU. Los seis resultados entrenados en la GPU antes del apagado se conservan en `results/neuronal/previos_apagado/cuda/` (39.6-56.7 s por red, con 10 hilos en el anfitrión), pero no hay una comparación en CPU completa hecha en las mismas condiciones, así que no se reportan como medición.
+- **Fragilidad del criterio RMS del escape:** resuelta con D42 (sección 8). La ventana alineada [−1, 0.5] solo cabía si el cruce caía en t ≥ −2; en GPU quedó en −2.0007 y la prueba falló sin que el camino fuera peor.
+- **Hilos de Numba:** resuelto (D43): el bloque estocástico se queda con sus 10 hilos.
 - **CLAUDE.md §3 frente a la especificación 02:** la superposición red-ruido está en `notebooks/02_neuronal/` y no en `03_integracion/` (D36). ¿Se deja así o se mueve?
 - **Especificación:** se guardó el texto de los revisores tal cual como `specs/02_neuronal.md`, para que el hito tenga su especificación como los anteriores.
 - **L-BFGS hasta convergencia estricta:** si se quiere, basta con subir `iteraciones_max`. No cambia ningún criterio.
@@ -155,3 +155,11 @@ Regeneradas desde los resultados vigentes (CPU, `d8dc92d`); dos ejecuciones segu
 6. **Reentrenamiento en CPU (D41):** los resultados de la GPU y el único completado de la corrida interrumpida se apartaron, sin borrar, a `results/neuronal/previos_apagado/`. Se reentrenó en CPU con 8 hilos. La primera vez, el árbol tenía el cuaderno modificado (lo edité mientras entrenaba); se hizo commit y se reentrenó con el árbol limpio: resultados idénticos bit a bit.
 7. **El refactor no cambió los números en CPU:** el resultado completado de la corrida interrumpida (`c5c4cd7`, CPU, 10 hilos) da S·D = 1.0000005166935544, igual a la primera corrida del hito (1.0000005167, antes del renombre y del cambio de dispositivo). Lo que cambia los números es el número de hilos o el dispositivo (orden de las sumas), no el código.
 8. **Cuaderno y bitácora:** los números del texto (A.1-A.6) se actualizaron a los resultados vigentes. Cambiaron algunas afirmaciones: L-BFGS se detuvo por el límite en 4 de 6 redes (antes 5); la red más grande ya no da la acción más alta en el instantón (ahora la intermedia da la más baja en ambos problemas); en el instantón aparece una cola de borde en la diferencia. Las conclusiones (criterios, robustez, límite por optimización) no cambian.
+
+## 8. Criterio RMS del escape y posición de la transición (2026-10-06, D42-D43)
+
+1. **Prueba modificada con autorización (D42):** el RMS del escape se evalúa en la intersección de [−1, 0.5] con el dominio, con el núcleo [−0.5, 0.5] entero dentro; la tolerancia no cambia. Validación: resultados vigentes en CPU, 4.771e-5 (sin cambio); resultados de la GPU (antes en falla), 4.637e-5; camino sintético con el núcleo fuera, falla; con el núcleo dentro, pasa.
+2. **Sección A.2′ del cuaderno, posición de la transición.** Cruces de las redes: −1.9999, −1.8246 y −1.8475 (CPU, 8 hilos). Minimizador exacto con horizonte finito, por la integral primera E = ½ẋ² − ½V′² (cuadratura con mpmath, 40 dígitos): E = 4.05e-13, **cruce t_c = −1.0000 = −T_h/3**, S·D − 1 = 3.8e-14. La estimación asintótica del costo de truncar, e^(−16L) + 2e^(−8R), con L y R las distancias a los bordes, tiene su mínimo en 16L = 8R, o sea t_c = −T_h/3, y vale 1.1e-7 en t_c = −2.
+   - **Discrepancia con la explicación pedida:** el argumento de las tasas (cola hacia la cima con tasa 4 frente a salida del pozo con tasa 8) explica que la transición quede a la izquierda del centro, pero el óptimo de horizonte finito está en −1, no en −2. Que la red quede en ≈ −2 se debe a lo débil de la fijación: entre −1 y −2 la acción cambia solo ~1e-7, menos que el error residual de la red (5e-7). Así lo escribí en el cuaderno. La hipótesis de que el optimizador empuja la transición hasta donde ese costo deja de ser apreciable y se detiene ahí no está comprobada: no se registró la trayectoria del cruce durante el entrenamiento.
+   - mpmath ya estaba instalado como dependencia de sympy; no se agregó ninguna dependencia.
+3. **Hilos de Numba y tiempos en CUDA (D43):** ver sección 6.

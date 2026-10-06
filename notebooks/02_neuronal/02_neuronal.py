@@ -41,6 +41,7 @@
 # | A.0 | Método directo: ansatz, red y funcionales | §5′ Fundamento de las redes (Ritz) |
 # | A.1 | Escape térmico: la red frente a $x_\mathrm{om}$ | §2 Camino más probable; Bloque A, aplicación |
 # | A.2 | Instantón: la red frente a $x_\mathrm{kink}$ | §3 Instantón; Bloque A, aplicación |
+# | A.2′ | Dónde ocurre la transición: el modo cero con horizonte finito | §5′ (modo cero de traslación); §2 |
 # | A.3 | La acción durante el entrenamiento y la cota analítica | §2 y §3 (cotas por completar cuadrados); §5′ (Ritz da cotas superiores) |
 # | A.4 | Robustez ante la arquitectura | Bloque A, validación |
 # | A.5 | La red sobre el tubo reactivo del ruido (Bloque A + Bloque B) | "Cómo se relacionan las partes": el camino de la red se superpone a las trayectorias reactivas |
@@ -60,6 +61,7 @@ from pathlib import Path
 
 import matplotlib.pyplot as plt
 import numpy as np
+from mpmath import exp as m_exp, findroot, log as m_log, mp, mpf, quad, sqrt as m_sqrt
 
 from taller.analitico import referencias as ref
 from taller.neuronal.guardado import cargar_resultado
@@ -106,11 +108,15 @@ def cruce(t: np.ndarray, x: np.ndarray, nivel: float) -> float:
 
 
 def rms_alineado(problema: str, arquitectura: str) -> tuple[float, float]:
-    """RMS entre el camino alineado de la red y la referencia cerrada, y el instante de cruce."""
+    """RMS entre el camino alineado de la red y la referencia cerrada, y el instante de cruce.
+
+    En el escape, el intervalo se recorta al dominio disponible (D42, misma regla que la prueba).
+    """
     datos, _ = R[problema, arquitectura]
     _, nivel, referencia, (a, b) = PROBLEMAS[problema]
     t_c = cruce(datos["t_doble"], datos["x_doble"], nivel)
     s = np.linspace(a, b, round((b - a) / 0.01) + 1)
+    s = s[(t_c + s >= datos["t_doble"][0]) & (t_c + s <= datos["t_doble"][-1])]
     return float(np.sqrt(np.mean((np.interp(t_c + s, datos["t_doble"], datos["x_doble"]) - referencia(s)) ** 2))), t_c
 
 
@@ -245,9 +251,87 @@ plt.show()
 # único que fija la posición del cruce: es el modo cero de traslación temporal (§5′), y por
 # eso se alinea antes de comparar.
 # En el escape, el cruce quedó en $t=-1.9999$, cerca del extremo izquierdo; la ventana
-# alineada $[-1, 0.5]$ empieza apenas $1.4\times10^{-4}$ dentro del dominio. El margen es
-# frágil: una corrida previa en la GPU, con el mismo código, dejó el cruce en $t=-2.0007$ y
-# la ventana salía $7\times10^{-4}$ del dominio, de modo que la prueba del RMS falló (D41).
+# alineada $[-1, 0.5]$ empieza apenas $1.4\times10^{-4}$ dentro del dominio. Una corrida
+# previa en la GPU, con el mismo código, dejó el cruce en $t=-2.0007$ y la ventana salía
+# $7\times10^{-4}$ del dominio. Por eso el RMS del escape se evalúa en la intersección de la
+# ventana con el dominio, exigiendo que el núcleo $[-0.5, 0.5]$ quede entero dentro (D42).
+# Por qué la transición cae ahí se estudia en A.2′.
+
+# %% [markdown]
+# ---
+# ## A.2′ Dónde ocurre la transición: el modo cero con horizonte finito (§5′)
+#
+# **Objetivo.** Explicar por qué el camino de la red cruza $x=-1/\sqrt2$ cerca de $t=-2$, y
+# no en el centro del intervalo $[-3, 3]$.
+#
+# **Resultado esperado.** Con tiempo infinito, la acción es invariante bajo traslaciones
+# temporales: $x_\mathrm{om}(t - t_0)$ tiene la misma acción para todo $t_0$. Es el modo cero,
+# consecuencia de la invariancia temporal del funcional que da la integral primera
+# $E = \tfrac12\dot x^2 - \tfrac12 V'(x)^2$. Con horizonte finito la simetría se rompe
+# débilmente: obligar al camino a valer exactamente $-1$ en $-T_h$ y $0$ en $T_h$ cuesta algo,
+# y ese costo depende de dónde esté la transición. Sea $t_c$ el cruce, $L = t_c + T_h$ y
+# $R = T_h - t_c$ las distancias a los bordes. Sin truncar, el camino se separa de las
+# fronteras en $\delta_L\approx\tfrac12 e^{-8L}$ (salida del pozo, tasa $V''(-1) = 8$) y
+# $\delta_R\approx e^{-4R}$ (cola hacia la cima, tasa $|V''(0)| = 4$). Forzar la frontera en
+# un tramo de tasa $k$ cuesta $\approx\tfrac k2\delta^2$, así que el exceso de acción es
+# $S\cdot D - 1\approx e^{-16L} + 2e^{-8R}$. La cola lenta hacia la cima cuesta más de
+# truncar que la salida rápida del pozo, y el mínimo con $L + R = 2T_h$ está en $16L = 8R$:
+# $L = 2T_h/3$, es decir, $t_c = -T_h/3 = -1$, a la izquierda del centro.
+#
+# **Cálculo.** (1) Cruces de las redes guardadas. (2) Minimizador exacto con horizonte finito
+# por la integral primera: con $E > 0$ el camino es monótono, $\dot x = \sqrt{V'^2 + 2E}$, y
+# $E$ se fija con $\int_{-1}^{0}dx/\dot x = 2T_h$. Entonces
+# $t_c = -T_h + \int_{-1}^{-1/\sqrt2}dx/\dot x$ y
+# $S\cdot D - 1 = \tfrac14\int(\dot x - V')^2\,dt = \tfrac14\int_{-1}^{0}(\dot x - V')^2/\dot x\,dx$
+# (cuadratura con mpmath, en 40 dígitos, porque $E\sim10^{-13}$). (3) La estimación
+# $e^{-16L} + 2e^{-8R}$ del costo de truncar en las posiciones de interés.
+
+# %%
+for a in ARQUITECTURAS:
+    datos, m = R["escape", a]
+    print(f"red {a:16}: cruce t_c = {cruce(datos['t_doble'], datos['x_doble'], -1 / np.sqrt(2)):+.4f}, "
+          f"S·D − 1 = {float(datos['accion']) - 1:.2e}  ({m['dispositivo']}, {m['hilos']} hilos)")
+
+mp.dps = 40
+T_h = mpf(R["escape", "defecto"][1]["parametros"]["horizonte"])
+dV = lambda x: 4 * x * (x**2 - 1)  # V'(x), en precisión de mpmath
+x_c = -1 / m_sqrt(2)
+eps = mpf("1e-6")  # puntos de corte para que quad trate los extremos casi singulares
+tramos = [-1, -1 + eps, x_c, -eps, 0]
+inv_v = lambda x, E: 1 / m_sqrt(dV(x) ** 2 + 2 * E)
+lnE = findroot(lambda l: quad(lambda x: inv_v(x, m_exp(l)), tramos) - 2 * T_h, m_log(mpf("1e-12")))
+E = m_exp(lnE)
+t_c_exacto = -T_h + quad(lambda x: inv_v(x, E), [-1, -1 + eps, x_c])
+exceso = quad(lambda x: (m_sqrt(dV(x) ** 2 + 2 * E) - dV(x)) ** 2 * inv_v(x, E), tramos) / 4
+print(f"minimizador exacto (T_h = {float(T_h):g}): E = {float(E):.3e}, cruce t_c = {float(t_c_exacto):+.4f} "
+      f"(−T_h/3 = {float(-T_h / 3):+.4f}), S·D − 1 = {float(exceso):.2e}")
+
+for t_c in (-2.0, -1.5, -1.0, -0.5, 0.0):
+    L, Rd = t_c + float(T_h), float(T_h) - t_c
+    print(f"t_c = {t_c:+.1f}: costo estimado de truncar e^(−16L) + 2e^(−8R) = {np.exp(-16 * L) + 2 * np.exp(-8 * Rd):.1e}")
+
+# %% [markdown]
+# **Verificación.** El minimizador exacto con $T_h = 3$ cruza en $t_c = -1.0000 = -T_h/3$,
+# con $S\cdot D - 1 = 3.8\times10^{-14}$, como predice la estimación asintótica. Las redes,
+# en cambio, cruzan en $-2.00$, $-1.82$ y $-1.85$, con un exceso de
+# $2\times10^{-7}$–$6\times10^{-7}$.
+#
+# **Interpretación física.** El argumento de las tasas explica por qué la transición está
+# a la izquierda del centro: con horizonte finito, la cola lenta hacia la cima (tasa 4) se
+# trunca peor que la salida rápida del pozo (tasa 8), y el óptimo deja el doble de tiempo a la
+# derecha ($R = 2L$). Pero no explica, por sí solo, que la red quede en $t\approx-2$: el
+# óptimo de horizonte finito está en $-1$. Lo que fija la posición de la red es lo débil que
+# es esa preferencia. Desplazar la transición de $-1$ a $-2$ cuesta solo
+# $e^{-16}\approx1\times10^{-7}$, menos que el error residual de aproximación y de optimización
+# de la red ($5\times10^{-7}$). A esa precisión el funcional casi no distingue esas posiciones.
+# Hacia la izquierda de $-2$, en cambio, el costo crece rápido ($e^{-8}\approx3\times10^{-4}$
+# en $t_c = -2.5$). Lo observado es coherente con que el optimizador empuje la transición
+# hasta donde ese costo deja de ser apreciable frente a su error residual y se detenga ahí; no
+# se registró la trayectoria del cruce durante el entrenamiento para comprobarlo. Que la posición dependa de cómo se hicieron las sumas confirma
+# lo débil de la fijación: con la misma red, la misma semilla y el mismo código, el cruce cae
+# en $-1.9999$ en CPU con 8 hilos, en $-1.9993$ con 10 hilos y en $-2.0007$ en la GPU (D41, D42).
+# Para la física del escape nada de esto importa: la forma del camino y la acción no dependen
+# de dónde esté la transición, y por eso se alinea antes de comparar.
 
 # %% [markdown]
 # ---
