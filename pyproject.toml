@@ -38,13 +38,3 @@ neuronal = [
 
 [tool.uv]
 default-groups = ["dev", "estocastico", "neuronal"]
-
-# PyTorch solo para CPU (hito 02): el índice de PyTorch es explícito, así que solo se usa
-# para los paquetes asignados en [tool.uv.sources]; todo lo demás sigue viniendo de PyPI.
-[[tool.uv.index]]
-name = "pytorch-cpu"
-url = "https://download.pytorch.org/whl/cpu"
-explicit = true
-
-[tool.uv.sources]
-torch = { index = "pytorch-cpu" }
