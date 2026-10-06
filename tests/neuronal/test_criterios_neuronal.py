@@ -5,7 +5,8 @@ Todo se recalcula aquí con numpy a partir del camino guardado (x y ẋ de la re
 la malla doble de 4001 puntos), sin usar el código de taller.neuronal:
 - la acción en la malla de entrenamiento (puntos pares de la malla doble) y en la doble;
 - la alineación en el cruce por x = −1/√2 (escape) o x = 0 (instantón);
-- el RMS frente a la referencia cerrada en el intervalo de la especificación.
+- el RMS frente a la referencia cerrada en el intervalo de la especificación; en el escape,
+  en su intersección con el dominio disponible, con el núcleo [−0.5, 0.5] entero dentro (D42).
 
 Claves esperadas: t_doble, x_doble, xdot_doble (4001,), accion (malla de 2001 puntos),
 accion_doble, y la clave metadatos (JSON).
@@ -18,6 +19,7 @@ import pytest
 from oraculo_neuronal import (
     INTERVALO_RMS_ESCAPE,
     INTERVALO_RMS_INSTANTON,
+    NUCLEO_RMS_ESCAPE,
     PUNTOS_MALLA,
     RESULTADOS,
     S0,
@@ -74,8 +76,16 @@ def _rms_alineado(problema: str) -> float:
     )
     k = int(np.flatnonzero(x >= nivel)[0])  # primer punto de la malla en o sobre el nivel
     t_c = t[k - 1] + (nivel - x[k - 1]) * (t[k] - t[k - 1]) / (x[k] - x[k - 1])
-    assert t[0] <= t_c + a and t_c + b <= t[-1], f"el intervalo alineado sale del dominio (t_c = {t_c:.3f})"
     s = np.linspace(a, b, round((b - a) / 0.01) + 1)
+    if problema == "escape":
+        # D42: la posición del cruce la fija débilmente el horizonte finito (modo cero), y la
+        # ventana alineada puede salirse del dominio. Se usa su intersección con el dominio,
+        # pero el núcleo de la transición debe quedar entero dentro.
+        n_a, n_b = NUCLEO_RMS_ESCAPE
+        assert t[0] <= t_c + n_a and t_c + n_b <= t[-1], f"el núcleo alineado sale del dominio (t_c = {t_c:.4f})"
+        s = s[(t_c + s >= t[0]) & (t_c + s <= t[-1])]
+    else:
+        assert t[0] <= t_c + a and t_c + b <= t[-1], f"el intervalo alineado sale del dominio (t_c = {t_c:.3f})"
     return float(np.sqrt(np.mean((np.interp(t_c + s, t, x) - referencia(s)) ** 2)))
 
 

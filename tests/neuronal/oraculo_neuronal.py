@@ -44,6 +44,9 @@ PARAMETROS = {
 X_ALINEACION_ESCAPE = -1 / np.sqrt(2)
 X_ALINEACION_INSTANTON = 0.0
 INTERVALO_RMS_ESCAPE = (-1.0, 0.5)
+# D42 (modificación autorizada): en el escape el RMS se evalúa en la intersección de
+# INTERVALO_RMS_ESCAPE con el dominio disponible, y el núcleo debe quedar entero dentro.
+NUCLEO_RMS_ESCAPE = (-0.5, 0.5)
 INTERVALO_RMS_INSTANTON = (-2.0, 2.0)
 
 # --- Tolerancias de la especificación 02 ------------------------------------------------

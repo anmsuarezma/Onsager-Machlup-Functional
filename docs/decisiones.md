@@ -320,3 +320,14 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Decisión (de los revisores):** todo el Bloque A corre en CPU (`dispositivo: cpu` en la configuración; `--dispositivo` sigue disponible) con `torch.set_num_threads(8)` (`hilos: 8`; `--hilos` tiene prioridad). No se usa la GPU. La medición de tiempos en CUDA queda pendiente.
 - **Resultados:** los seis entrenados en la GPU y el único completado de la comparación en CPU con 10 hilos se apartan (sin borrar) en `results/neuronal/previos_apagado/`; los resultados oficiales se reentrenan en CPU.
 - **Pruebas:** la suite corre con `CUDA_VISIBLE_DEVICES=""` para no tocar la GPU; `test_el_calculo_corre_en_la_gpu` se omite por su propio `skipif`. Las pruebas del bloque estocástico siguen usando los 10 hilos de Numba de `configs/estocastico/comun.yaml` (D23); limitar Numba a 8 con `NUMBA_NUM_THREADS` choca con esa configuración y hace fallar 4 pruebas, así que no se limita.
+
+### D42. Modificación autorizada de una prueba congelada: RMS del escape en la intersección con el dominio
+
+- **Causa:** la posición de la transición del escape la fija solo débilmente el horizonte finito (modo cero de traslación). Con T_h = 3, la ventana alineada [−1, 0.5] solo cabe si el cruce cae en t ≥ −2, y las redes quedan justo en ese límite: −1.9993 (CPU, 10 hilos), −1.9999 (CPU, 8 hilos) y −2.0007 (GPU). Con la GPU, `test_escape_rms_alineado` falló porque la ventana salía 7e-4 del dominio, aunque el camino era igual de bueno (RMS 4.6e-5 en la parte disponible). Es un defecto de diseño del criterio, no del resultado.
+- **Decisión (de los revisores):** el RMS del escape se evalúa en la intersección de [−1, 0.5] (tiempo alineado) con el dominio disponible, y la prueba exige que el núcleo [−0.5, 0.5] quede entero dentro; si no, falla. La tolerancia (< 0.01) no cambia. El instantón no cambia.
+- **Cambios:** `tests/neuronal/oraculo_neuronal.py` (constante `NUCLEO_RMS_ESCAPE = (-0.5, 0.5)`) y `_rms_alineado` en `tests/neuronal/test_criterios_neuronal.py`. Los puntos del RMS son los mismos de antes (paso 0.01), solo que se descartan los que caen fuera del dominio: cuando la ventana cabe entera, el valor no cambia. El cuaderno usa la misma regla.
+- **Validación de la prueba modificada:** resultados vigentes en CPU, RMS 4.771e-5 (igual que antes); resultados de la GPU, antes en falla, RMS 4.637e-5; camino sintético x_om con cruce en −2.6 (núcleo fuera del dominio), falla como debe; con cruce en −2.4 pasa.
+
+### D43. Alcance tras el apagado: hilos de Numba y tiempos en CUDA
+
+- **Decisión (de los revisores):** el bloque estocástico conserva sus 10 hilos de Numba (D23); no se cambian ni su configuración ni sus pruebas. La medición de tiempos en CUDA queda fuera del alcance del hito 02, porque no responde ninguna pregunta física del taller. La opción `--dispositivo` se mantiene funcional, y D41 (solo CPU, 8 hilos de PyTorch) sigue vigente.
