@@ -14,6 +14,8 @@ from pathlib import Path
 
 import numpy as np
 
+from taller.neuronal.dispositivo import nombre_dispositivo
+
 RAIZ = Path(__file__).resolve().parents[3]
 
 
@@ -21,8 +23,9 @@ def _git(*argumentos: str) -> str:
     return subprocess.run(["git", *argumentos], cwd=RAIZ, capture_output=True, text=True, check=True).stdout.strip()
 
 
-def metadatos_corrida(parametros: dict, semilla: int, hilos: int) -> dict:
-    """Parámetros, semilla, fecha, commit, si el árbol tenía cambios sin commit, hilos y versiones."""
+def metadatos_corrida(parametros: dict, semilla: int, hilos: int, dispositivo: str, precision: str) -> dict:
+    """Parámetros, semilla, fecha, commit, si el árbol tenía cambios sin commit, hilos, dispositivo,
+    precisión (float64, o float32 en mps) y versiones."""
     meta = {
         "parametros": parametros,
         "semilla": semilla,
@@ -30,6 +33,9 @@ def metadatos_corrida(parametros: dict, semilla: int, hilos: int) -> dict:
         "commit": _git("rev-parse", "HEAD"),
         "arbol_modificado": bool(_git("status", "--porcelain")),
         "hilos": hilos,
+        "dispositivo": dispositivo,
+        "nombre_dispositivo": nombre_dispositivo(dispositivo),
+        "precision": precision,
         "versiones": {p: version(p) for p in ("numpy", "torch", "scipy")} | {"python": platform.python_version()},
     }
     return json.loads(json.dumps(meta))

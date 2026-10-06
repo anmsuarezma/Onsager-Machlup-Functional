@@ -4,8 +4,11 @@ import torch
 from torch import nn
 
 
-def crear_red(capas: list[int], semilla: int, escala_ultima_capa: float) -> nn.Sequential:
-    """Perceptrón 1 → capas → 1 en float64, con tanh en las capas ocultas y salida lineal.
+def crear_red(
+    capas: list[int], semilla: int, escala_ultima_capa: float,
+    dispositivo: str = "cpu", dtype: torch.dtype = torch.float64,
+) -> nn.Sequential:
+    """Perceptrón 1 → capas → 1 (float64 salvo en mps, D39), con tanh en las capas ocultas y salida lineal.
 
     Inicialización: Xavier uniforme en los pesos de las capas ocultas y sesgos uniformes en
     ±1/√(entradas) (la inicialización por defecto de PyTorch). Los sesgos no pueden ser nulos:
@@ -13,7 +16,9 @@ def crear_red(capas: list[int], semilla: int, escala_ultima_capa: float) -> nn.S
     el gradiente conservaría esa simetría, que quedaría impuesta (D35). La última capa se
     inicia con Xavier multiplicado por `escala_ultima_capa` (casi nula) y sesgo nulo, de modo
     que N ≈ 0 y el camino inicial del ansatz es la recta entre los extremos. La semilla fija la
-    inicialización con un generador propio, sin tocar el estado global de PyTorch.
+    inicialización con un generador propio, sin tocar el estado global de PyTorch. La red se
+    inicia en CPU y en float64 y después se mueve al dispositivo y la precisión pedidos: los
+    pesos iniciales no dependen del dispositivo.
     """
     generador = torch.Generator().manual_seed(semilla)
     dimensiones = [1, *capas, 1]
@@ -31,7 +36,7 @@ def crear_red(capas: list[int], semilla: int, escala_ultima_capa: float) -> nn.S
         modulos.append(lineal)
         if i < len(dimensiones) - 2:
             modulos.append(nn.Tanh())
-    return nn.Sequential(*modulos)
+    return nn.Sequential(*modulos).to(device=dispositivo, dtype=dtype)
 
 
 def contar_parametros(red: nn.Module) -> int:
