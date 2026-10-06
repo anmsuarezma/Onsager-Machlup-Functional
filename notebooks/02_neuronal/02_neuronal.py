@@ -5,6 +5,8 @@
 #     text_representation:
 #       extension: .py
 #       format_name: percent
+#       format_version: '1.3'
+#       jupytext_version: 1.19.6
 #   kernelspec:
 #     display_name: Python 3 (ipykernel)
 #     language: python
@@ -114,7 +116,8 @@ def rms_alineado(problema: str, arquitectura: str) -> tuple[float, float]:
 
 meta = R["escape", "defecto"][1]
 print(f"commit {meta['commit'][:7]} ({'árbol modificado' if meta['arbol_modificado'] else 'árbol limpio'}), "
-      f"{meta['hilos']} hilos, PyTorch {meta['versiones']['torch']}, {meta['fecha']}")
+      f"{meta['dispositivo']} ({meta['nombre_dispositivo']}), {meta['precision']}, {meta['hilos']} hilos, "
+      f"PyTorch {meta['versiones']['torch']}, {meta['fecha']}")
 
 # %% [markdown]
 # ---
@@ -131,12 +134,13 @@ print(f"commit {meta['commit'][:7]} ({'árbol modificado' if meta['arbol_modific
 # $-1$ a $+1$ (Bogomolny).
 #
 # **Cálculo.**
-# - Funcionales: $S\cdot D = \frac14\int_{-T}^{T}(\dot x + V')^2\,dt$, con $x(-T) = -1$ y
-#   $x(T) = 0$ (Freidlin-Wentzell; $D$ solo multiplica la acción); y
-#   $S_E = \int_{-T}^{T}[\tfrac12\dot x^2 + V]\,d\tau$, con $x(-T) = -1$ y $x(T) = +1$.
-#   $T = 3$ y $T = 4$, respectivamente.
+# - Funcionales: $S\cdot D = \frac14\int_{-T_h}^{T_h}(\dot x + V')^2\,dt$, con $x(-T_h) = -1$ y
+#   $x(T_h) = 0$ (Freidlin-Wentzell; $D$ solo multiplica la acción); y
+#   $S_E = \int_{-T_h}^{T_h}[\tfrac12\dot x^2 + V]\,d\tau$, con $x(-T_h) = -1$ y $x(T_h) = +1$.
+#   Horizonte $T_h = 3$ y $T_h = 4$, respectivamente (se llama $T_h$, no $T$, porque en el
+#   taller $T$ designa el tiempo medio de escape y la temperatura; D40).
 # - Ansatz con fronteras exactas:
-#   $x(t) = x_a + (x_b - x_a)\frac{t+T}{2T} + \frac{(t+T)(T-t)}{T^2}\,N(t/T)$. Sin
+#   $x(t) = x_a + (x_b - x_a)\frac{t+T_h}{2T_h} + \frac{(t+T_h)(T_h-t)}{T_h^2}\,N(t/T_h)$. Sin
 #   penalizaciones: con la acción como pérdida, una penalización dejaría bajar la acción
 #   incumpliendo la frontera.
 # - $N$: perceptrón con tanh (por defecto, 2 capas de 32), en float64. Pesos Xavier; sesgos
@@ -151,7 +155,7 @@ print(f"commit {meta['commit'][:7]} ({'árbol modificado' if meta['arbol_modific
 for p in PROBLEMAS:
     _, m = R[p, "defecto"]
     q = m["parametros"]
-    print(f"{p}: T = {q['T']}, x(−T) = {q['x_a']}, x(T) = {q['x_b']}, capas {q['capas']}, {q['n_parametros']} parámetros, "
+    print(f"{p}: T_h = {q['horizonte']}, x(−T_h) = {q['x_a']}, x(T_h) = {q['x_b']}, capas {q['capas']}, {q['n_parametros']} parámetros, "
           f"malla {q['malla']}, Adam {q['adam']['iteraciones']} × tasa {q['adam']['tasa']}, "
           f"L-BFGS {q['evaluaciones_lbfgs']} evaluaciones, {q['tiempo_s']} s, semilla {m['semilla']}")
 
@@ -228,9 +232,9 @@ plt.show()
 #
 # **Interpretación física.** Sin ecuación de movimiento y sin datos, la minimización directa
 # de la acción reproduce el camino de escape de §2 y el kink de §3: la forma débil contiene
-# toda la información del problema. Con fronteras exactas en $\pm T$, la red resuelve en
+# toda la información del problema. Con fronteras exactas en $\pm T_h$, la red resuelve en
 # rigor el problema de "llegar a tiempo", cuya solución difiere de la de horizonte infinito
-# en términos exponencialmente pequeños en $T$. En el escape se ven en el borde izquierdo:
+# en términos exponencialmente pequeños en $T_h$. En el escape se ven en el borde izquierdo:
 # como el cruce quedó en $t=-2.00$, tras alinear el dominio empieza en $t=-1$, donde la red
 # vale exactamente $-1$ y $x_\mathrm{om}(-1) = -1 + 1.7\times10^{-4}$. Esa es la diferencia
 # de $-1.7\times10^{-4}$ del extremo izquierdo del panel. Esos mismos términos de borde son lo
@@ -344,8 +348,8 @@ for p, (cota, *_rest) in PROBLEMAS.items():
 # evaluaciones. La dirección más difícil de optimizar es el modo casi plano de traslación:
 # el cruce cae en un lugar distinto con cada arquitectura ($-2.00$, $-1.83$ y $-1.85$ en el
 # escape; $+0.17$, $-0.23$ y $-0.03$ en el instantón), porque el funcional solo lo fija a través
-# de términos exponencialmente pequeños en $T$. Cuánto aporta el horizonte finito a ese
-# exceso residual no se puede separar sin variar $T$ (estudio 1 del plan, fuera del alcance).
+# de términos exponencialmente pequeños en $T_h$. Cuánto aporta el horizonte finito a ese
+# exceso residual no se puede separar sin variar $T_h$ (estudio 1 del plan, fuera del alcance).
 
 # %% [markdown]
 # ---
