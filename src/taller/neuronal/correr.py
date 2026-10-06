@@ -56,7 +56,7 @@ def main(argv: list[str] | None = None) -> None:
                 continue
             r = entrenar(problema, config, capas, dispositivo, dtype)
             doble = evaluar_en_malla_doble(problema, r, config["malla"])
-            datos = {"historia": r["historia"], "fase": r["fase"], "accion": np.float64(r["accion"]),
+            datos = {"historia": r["historia"], "cruce": r["cruce"], "fase": r["fase"], "accion": np.float64(r["accion"]),
                      **{k: (np.float64(v) if np.isscalar(v) else v) for k, v in doble.items()}}
             p = config["problemas"][problema]
             parametros = {"problema": problema, "arquitectura": nombre, "capas": capas, "horizonte": p["horizonte"],

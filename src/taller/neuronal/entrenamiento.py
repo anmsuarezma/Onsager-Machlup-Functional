@@ -14,6 +14,8 @@ from taller.neuronal.ansatz import camino_y_derivada
 from taller.neuronal.red import contar_parametros, crear_red
 
 ACCIONES = {"escape": accion_escape, "instanton": accion_instanton}
+# Nivel del cruce que marca la posición de la transición (convención del hito 00 y de E7).
+NIVEL_CRUCE = {"escape": -1 / np.sqrt(2), "instanton": 0.0}
 
 
 def malla(horizonte: float, puntos: int, dispositivo: str = "cpu", dtype: torch.dtype = torch.float64) -> torch.Tensor:
@@ -25,6 +27,23 @@ def evaluar_accion(problema: str, red, t: torch.Tensor, horizonte: float, x_a: f
     """Acción del camino de la red en la malla t (S·D para el escape, S_E para el instantón)."""
     x, xdot = camino_y_derivada(red, t, horizonte, x_a, x_b)
     return ACCIONES[problema](x, xdot, t)
+
+
+def _accion_y_cruce(problema: str, red, t: torch.Tensor, horizonte: float, x_a: float, x_b: float):
+    """Acción del camino y el instante en que cruza NIVEL_CRUCE (interpolación lineal en la malla).
+
+    El cruce sigue la posición de la transición a lo largo del modo cero de traslación
+    durante el entrenamiento (§5′). Se calcula sobre el camino separado del grafo, así que no
+    interviene en el gradiente.
+    """
+    x, xdot = camino_y_derivada(red, t, horizonte, x_a, x_b)
+    xs, ts, nivel = x.detach().cpu().numpy(), t.detach().cpu().numpy(), NIVEL_CRUCE[problema]
+    k = int(np.argmax(xs >= nivel))
+    if k == 0:  # sin cruce con orden ascendente en la malla
+        cruce = np.nan
+    else:
+        cruce = ts[k - 1] + (nivel - xs[k - 1]) * (ts[k] - ts[k - 1]) / (xs[k] - xs[k - 1])
+    return ACCIONES[problema](x, xdot, t), float(cruce)
 
 
 def _sincronizar(dispositivo: str) -> None:
@@ -42,7 +61,8 @@ def entrenar(
 
     Devuelve la red entrenada, la acción en cada evaluación de la pérdida (`historia`, con
     `fase` = 0 para Adam y 1 para L-BFGS), la acción final, el número de parámetros y el
-    tiempo de entrenamiento (con la GPU sincronizada).
+    tiempo de entrenamiento (con la GPU sincronizada). `cruce` guarda, en cada evaluación, el
+    instante en que el camino cruza NIVEL_CRUCE (posición de la transición).
     """
     p = config["problemas"][problema]
     horizonte, x_a, x_b = p["horizonte"], p["x_a"], p["x_b"]
@@ -51,16 +71,18 @@ def entrenar(
     t = malla(horizonte, config["malla"], dispositivo, dtype)
     _sincronizar(dispositivo)
     historia: list[float] = []
+    cruces: list[float] = []
     fase: list[int] = []
     inicio = time.perf_counter()
 
     adam = torch.optim.Adam(red.parameters(), lr=config["adam"]["tasa"])
     for _ in range(config["adam"]["iteraciones"]):
         adam.zero_grad()
-        S = evaluar_accion(problema, red, t, horizonte, x_a, x_b)
+        S, cruce = _accion_y_cruce(problema, red, t, horizonte, x_a, x_b)
         S.backward()
         adam.step()
         historia.append(S.item())
+        cruces.append(cruce)
         fase.append(0)
 
     c = config["lbfgs"]
@@ -72,9 +94,10 @@ def entrenar(
 
     def cierre():
         lbfgs.zero_grad()
-        S = evaluar_accion(problema, red, t, horizonte, x_a, x_b)
+        S, cruce = _accion_y_cruce(problema, red, t, horizonte, x_a, x_b)
         S.backward()
         historia.append(S.item())
+        cruces.append(cruce)
         fase.append(1)
         return S
 
@@ -85,7 +108,7 @@ def entrenar(
     return {
         "red": red, "horizonte": horizonte, "x_a": x_a, "x_b": x_b, "capas": capas,
         "dispositivo": dispositivo, "dtype": dtype,
-        "historia": np.array(historia), "fase": np.array(fase, dtype=np.int8),
+        "historia": np.array(historia), "cruce": np.array(cruces), "fase": np.array(fase, dtype=np.int8),
         "accion": accion_final, "n_parametros": contar_parametros(red), "tiempo_s": tiempo,
     }
 
