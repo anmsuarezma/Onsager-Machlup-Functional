@@ -29,8 +29,8 @@ def x_kink(tau: np.ndarray) -> np.ndarray:
 
 
 # --- Parámetros de la especificación 02 -------------------------------------------------
-T_ESCAPE = 3.0
-T_INSTANTON = 4.0
+HORIZONTE_ESCAPE = 3.0
+HORIZONTE_INSTANTON = 4.0
 PUNTOS_MALLA = 2001
 ARQUITECTURAS = {"defecto": [32, 32], "tres_capas_32": [32, 32, 32], "cuatro_capas_64": [64, 64, 64, 64]}
 # Parámetros de cada perceptrón 1 → capas → 1, contados a mano: Σ (entradas + 1)·salidas.

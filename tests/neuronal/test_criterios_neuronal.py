@@ -22,8 +22,8 @@ from oraculo_neuronal import (
     RESULTADOS,
     S0,
     S_D_MIN,
-    T_ESCAPE,
-    T_INSTANTON,
+    HORIZONTE_ESCAPE,
+    HORIZONTE_INSTANTON,
     TOL_ACCION,
     TOL_COTA,
     TOL_MALLA,
@@ -79,7 +79,7 @@ def _rms_alineado(problema: str) -> float:
     return float(np.sqrt(np.mean((np.interp(t_c + s, t, x) - referencia(s)) ** 2)))
 
 
-@pytest.mark.parametrize("problema, T", [("escape", T_ESCAPE), ("instanton", T_INSTANTON)])
+@pytest.mark.parametrize("problema, T", [("escape", HORIZONTE_ESCAPE), ("instanton", HORIZONTE_INSTANTON)])
 def test_resultado_completo(problema, T) -> None:
     d = _cargar(problema)
     assert d["t_doble"].shape == (2 * PUNTOS_MALLA - 1,)

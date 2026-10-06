@@ -1,17 +1,18 @@
 # Hito 02: red variacional (método directo tipo Ritz) para los dos funcionales del taller.
 # Semillas fijadas antes de implementar, junto con las pruebas.
 hilos: 10                  # hilos de PyTorch en CPU (como D23); --hilos tiene prioridad
-malla: 2001                # puntos equiespaciados en [−T, T]; la verificación usa 2·malla − 1
+dispositivo: null          # null: automático (cuda, si no mps, si no cpu); --dispositivo tiene prioridad (D39)
+malla: 2001                # puntos equiespaciados en [−T_h, T_h]; la verificación usa 2·malla − 1
 escala_ultima_capa: 1.0e-3 # pesos de la última capa casi nulos: el camino inicial es la recta
 
 problemas:
-  escape:                  # S·D = (1/4)∫(ẋ + V′)² dt, x(−T) = −1, x(T) = 0
-    T: 3.0
+  escape:                  # S·D = (1/4)∫(ẋ + V′)² dt, x(−T_h) = −1, x(T_h) = 0
+    horizonte: 3.0          # T_h (D40)
     x_a: -1.0
     x_b: 0.0
     semilla: 20261009
-  instanton:               # S_E = ∫[½ẋ² + V] dτ, x(−T) = −1, x(T) = +1
-    T: 4.0
+  instanton:               # S_E = ∫[½ẋ² + V] dτ, x(−T_h) = −1, x(T_h) = +1
+    horizonte: 4.0
     x_a: -1.0
     x_b: 1.0
     semilla: 20261010

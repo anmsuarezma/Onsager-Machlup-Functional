@@ -1,11 +1,11 @@
 """Configuración del hito 02: parámetros de la especificación y semillas desde configs/ (CLAUDE.md §6)."""
 
-from oraculo_neuronal import ARQUITECTURAS, PUNTOS_MALLA, T_ESCAPE, T_INSTANTON, cargar_config
+from oraculo_neuronal import ARQUITECTURAS, HORIZONTE_ESCAPE, HORIZONTE_INSTANTON, PUNTOS_MALLA, cargar_config
 
 
 def test_horizontes_y_fronteras() -> None:
     c = cargar_config()["problemas"]
-    assert c["escape"]["T"] == T_ESCAPE and c["instanton"]["T"] == T_INSTANTON
+    assert c["escape"]["horizonte"] == HORIZONTE_ESCAPE and c["instanton"]["horizonte"] == HORIZONTE_INSTANTON
     assert (c["escape"]["x_a"], c["escape"]["x_b"]) == (-1.0, 0.0)
     assert (c["instanton"]["x_a"], c["instanton"]["x_b"]) == (-1.0, 1.0)
 
