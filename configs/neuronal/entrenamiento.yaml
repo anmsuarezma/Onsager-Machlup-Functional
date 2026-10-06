@@ -1,7 +1,7 @@
 # Hito 02: red variacional (método directo tipo Ritz) para los dos funcionales del taller.
 # Semillas fijadas antes de implementar, junto con las pruebas.
-hilos: 10                  # hilos de PyTorch en CPU (como D23); --hilos tiene prioridad
-dispositivo: null          # null: automático (cuda, si no mps, si no cpu); --dispositivo tiene prioridad (D39)
+hilos: 8                   # hilos de PyTorch en CPU (D41: apagados bajo carga); --hilos tiene prioridad
+dispositivo: cpu           # D41: solo CPU hasta nuevo aviso; null = automático (D39); --dispositivo tiene prioridad
 malla: 2001                # puntos equiespaciados en [−T_h, T_h]; la verificación usa 2·malla − 1
 escala_ultima_capa: 1.0e-3 # pesos de la última capa casi nulos: el camino inicial es la recta
 

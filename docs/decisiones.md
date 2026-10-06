@@ -296,3 +296,27 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 ### D37. L-BFGS se detuvo por el límite de evaluaciones
 
 - **Observación (de Claude):** con `iteraciones_max = 5000` (`max_eval` = 6250), L-BFGS terminó por el límite de evaluaciones en 5 de las 6 redes y por tolerancia en una (escape, 3 × 32). No es "hasta convergencia" en sentido estricto, pero el exceso de la acción sobre la cota ya es de 1e-7 a 1e-8, frente a una tolerancia de 1e-2. No se cambió la configuración.
+
+### D38. PyTorch estándar (con CUDA en Linux) en lugar del índice CPU
+
+- **Decisión (de los revisores):** `uv add torch` sin índices especiales; reemplaza a D34. Resolvió torch 2.14.1+cu130 (runtime CUDA 13.0, compatible con el driver 595.91, CUDA 13.2). Solo cambió torch entre los paquetes existentes (+cpu → +cu130); numpy sigue en 2.4.6.
+- **Verificación:** GPU comprobada con un cálculo real en float64 (`test_el_calculo_corre_en_la_gpu`, CLAUDE.md §12). Suite completa tras instalar: 231 passed (sesión del 2026-10-06, antes del apagado).
+- **Registro tardío:** el commit 94f9db3 cita D38, D39 y D40, pero la máquina se apagó antes de escribirlas aquí; se registran el 2026-10-06 a partir de los mensajes de commit y de las instrucciones de los revisores.
+
+### D39. Selección de dispositivo y precisión
+
+- **Decisión (de los revisores):** automática (cuda, si no mps, si no cpu), con `--dispositivo` para forzarla y la clave `dispositivo` en la configuración. float64 en cuda y cpu; float32 con aviso en mps, que no soporta float64. Dispositivo, nombre del hardware y precisión van en los metadatos. Los tiempos en GPU se miden con `torch.cuda.synchronize()` antes de detener el reloj. `--salida` permite guardar una corrida de comparación sin pisar los resultados oficiales.
+
+### D40. El horizonte de las redes se llama `horizonte` (T_h), no T
+
+- **Decisión (de los revisores):** en el taller T designa el tiempo medio de escape y la temperatura. Se renombra en el código, la configuración y el cuaderno.
+- **Modificación autorizada de pruebas congeladas:** solo la clave `T` → `horizonte` que leen las pruebas y los nombres de constantes del oráculo (`T_ESCAPE`, `T_INSTANTON` → `HORIZONTE_*`). Ningún valor esperado ni tolerancia cambia.
+
+## 2026-10-06 — Apagado inesperado durante el hito 02
+
+### D41. Solo CPU, con 8 hilos de PyTorch, hasta nuevo aviso
+
+- **Contexto:** la máquina se apagó (≈ 00:13) mientras entrenaba en CPU con 10 hilos la corrida de comparación de tiempos (`--dispositivo cpu --salida results/neuronal/cpu`), justo después de entrenar las seis redes en la GPU. Hay apagados repetidos bajo carga (ver D23).
+- **Decisión (de los revisores):** todo el Bloque A corre en CPU (`dispositivo: cpu` en la configuración; `--dispositivo` sigue disponible) con `torch.set_num_threads(8)` (`hilos: 8`; `--hilos` tiene prioridad). No se usa la GPU. La medición de tiempos en CUDA queda pendiente.
+- **Resultados:** los seis entrenados en la GPU y el único completado de la comparación en CPU con 10 hilos se apartan (sin borrar) en `results/neuronal/previos_apagado/`; los resultados oficiales se reentrenan en CPU.
+- **Pruebas:** la suite corre con `CUDA_VISIBLE_DEVICES=""` para no tocar la GPU; `test_el_calculo_corre_en_la_gpu` se omite por su propio `skipif`. Las pruebas del bloque estocástico siguen usando los 10 hilos de Numba de `configs/estocastico/comun.yaml` (D23); limitar Numba a 8 con `NUMBA_NUM_THREADS` choca con esa configuración y hace fallar 4 pruebas, así que no se limita.
