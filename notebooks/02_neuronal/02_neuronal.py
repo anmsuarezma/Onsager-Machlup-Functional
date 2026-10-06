@@ -219,16 +219,17 @@ plt.show()
 
 # %% [markdown]
 # **Verificación.** Los seis criterios de la arquitectura por defecto se cumplen con varios
-# órdenes de margen: el error de la acción es $5.2\times10^{-7}$ (escape) y $2.2\times10^{-8}$
-# (instantón), frente a $10^{-2}$; el RMS alineado es $4.8\times10^{-5}$ y $1.4\times10^{-5}$,
+# órdenes de margen: el error de la acción es $5.1\times10^{-7}$ (escape) y $1.2\times10^{-7}$
+# (instantón), frente a $10^{-2}$; el RMS alineado es $4.8\times10^{-5}$ y $2.8\times10^{-5}$,
 # frente a $10^{-2}$; las cotas se cumplen (la acción queda por encima de la referencia); y al
-# duplicar la malla la acción cambia $2.6\times10^{-11}$ y $2.4\times10^{-13}$ en relativo,
+# duplicar la malla la acción cambia $2.6\times10^{-11}$ y $1.1\times10^{-12}$ en relativo,
 # frente a $10^{-4}$.
 #
 # La franja sombreada es el intervalo del RMS. La diferencia entre la red y la solución
 # cerrada (paneles inferiores) es una oscilación repartida por todo el dominio, de amplitud
-# $\sim10^{-4}$ (escape) y $\sim5\times10^{-5}$ (instantón). Es el patrón típico del error de
-# aproximación y de optimización de la red, no un efecto localizado en los bordes.
+# $\sim10^{-4}$ en el escape; en el instantón no pasa de $7.5\times10^{-5}$ dentro de la
+# ventana del RMS y crece hacia el borde derecho (ver abajo). Es el patrón típico del error de
+# aproximación y de optimización de la red, más los términos de borde del horizonte finito.
 #
 # **Interpretación física.** Sin ecuación de movimiento y sin datos, la minimización directa
 # de la acción reproduce el camino de escape de §2 y el kink de §3: la forma débil contiene
@@ -237,11 +238,16 @@ plt.show()
 # en términos exponencialmente pequeños en $T_h$. En el escape se ven en el borde izquierdo:
 # como el cruce quedó en $t=-2.00$, tras alinear el dominio empieza en $t=-1$, donde la red
 # vale exactamente $-1$ y $x_\mathrm{om}(-1) = -1 + 1.7\times10^{-4}$. Esa es la diferencia
-# de $-1.7\times10^{-4}$ del extremo izquierdo del panel. Esos mismos términos de borde son lo
+# de $-1.7\times10^{-4}$ del extremo izquierdo del panel. En el instantón, el cruce quedó en
+# $\tau=+0.60$ y el borde derecho queda a $3.40$ de él: allí la red vale exactamente $+1$ y
+# $x_\mathrm{kink}(3.40) = 1 - 1.3\times10^{-4}$, de ahí la cola derecha del panel (hasta
+# $1.9\times10^{-4}$, fuera de la ventana del RMS). Esos mismos términos de borde son lo
 # único que fija la posición del cruce: es el modo cero de traslación temporal (§5′), y por
 # eso se alinea antes de comparar.
-# En el escape, el cruce quedó en $t=-2.00$, cerca del extremo izquierdo; la ventana alineada
-# $[-1, 0.5]$ empieza apenas $7\times10^{-4}$ dentro del dominio.
+# En el escape, el cruce quedó en $t=-1.9999$, cerca del extremo izquierdo; la ventana
+# alineada $[-1, 0.5]$ empieza apenas $1.4\times10^{-4}$ dentro del dominio. El margen es
+# frágil: una corrida previa en la GPU, con el mismo código, dejó el cruce en $t=-2.0007$ y
+# la ventana salía $7\times10^{-4}$ del dominio, de modo que la prueba del RMS falló (D41).
 
 # %% [markdown]
 # ---
@@ -294,9 +300,9 @@ for p in PROBLEMAS:
 
 # %% [markdown]
 # **Verificación.** Ninguna de las evaluaciones queda por debajo de la cota: el mínimo de la
-# historia está $5.2\times10^{-7}$ (escape) y $4.2\times10^{-8}$ (instantón) por encima.
+# historia está $5.1\times10^{-7}$ (escape) y $2.2\times10^{-7}$ (instantón) por encima.
 # Adam baja el exceso de $\sim1$ a $\sim5\times10^{-5}$ (escape) y $\sim6\times10^{-5}$
-# (instantón); L-BFGS lo baja dos o tres órdenes más.
+# (instantón); L-BFGS lo baja unos dos órdenes más.
 #
 # **Interpretación física.** La curva es el método de Ritz en acción: una sucesión de caminos
 # admisibles cuya acción decrece monótonamente hacia el mínimo, siempre por encima de la
@@ -304,7 +310,7 @@ for p in PROBLEMAS:
 # debajo, es una verificación conjunta de tres cosas: de la discretización (una cuadratura
 # sesgada podría bajar de la cota), del ansatz (las fronteras exactas impiden "hacer
 # trampa" sin llegar a la frontera) y de la propia cota. L-BFGS terminó por el límite de
-# evaluaciones en 5 de las 6 redes, no por tolerancia: el exceso restante ($10^{-7}$–$10^{-8}$)
+# evaluaciones en 4 de las 6 redes, no por tolerancia: el exceso restante ($10^{-7}$–$10^{-8}$)
 # está muy por debajo de la tolerancia.
 
 # %% [markdown]
@@ -329,25 +335,33 @@ for p, (cota, *_rest) in PROBLEMAS.items():
 # %% [markdown]
 # | Problema | Arquitectura | Parámetros | Acción | Error relativo | RMS | Tiempo (s) |
 # |---|---|---|---|---|---|---|
-# | escape | 2 × 32 (defecto) | 1153 | 1.0000005167 | $+5.2\times10^{-7}$ | $4.8\times10^{-5}$ | 23.6 |
-# | escape | 3 × 32 | 2209 | 1.0000001996 | $+2.0\times10^{-7}$ | $3.3\times10^{-5}$ | 35.7 |
-# | escape | 4 × 64 | 12673 | 1.0000006030 | $+6.0\times10^{-7}$ | $1.4\times10^{-5}$ | 71.2 |
-# | instantón | 2 × 32 (defecto) | 1153 | 1.8856181255 | $+2.2\times10^{-8}$ | $1.4\times10^{-5}$ | 20.2 |
-# | instantón | 3 × 32 | 2209 | 1.8856181108 | $+1.5\times10^{-8}$ | $9.3\times10^{-6}$ | 24.1 |
-# | instantón | 4 × 64 | 12673 | 1.8856181529 | $+3.7\times10^{-8}$ | $2.1\times10^{-5}$ | 79.3 |
+# | escape | 2 × 32 (defecto) | 1153 | 1.0000005090 | $+5.1\times10^{-7}$ | $4.8\times10^{-5}$ | 23.9 |
+# | escape | 3 × 32 | 2209 | 1.0000001920 | $+1.9\times10^{-7}$ | $3.2\times10^{-5}$ | 36.6 |
+# | escape | 4 × 64 | 12673 | 1.0000006032 | $+6.0\times10^{-7}$ | $1.4\times10^{-5}$ | 76.6 |
+# | instantón | 2 × 32 (defecto) | 1153 | 1.8856183008 | $+1.2\times10^{-7}$ | $2.8\times10^{-5}$ | 18.9 |
+# | instantón | 3 × 32 | 2209 | 1.8856181170 | $+1.8\times10^{-8}$ | $1.2\times10^{-5}$ | 7.5 |
+# | instantón | 4 × 64 | 12673 | 1.8856181444 | $+3.2\times10^{-8}$ | $1.9\times10^{-5}$ | 93.2 |
+#
+# Tiempos en CPU (8 hilos de PyTorch, i9-10900KF, float64; D41). La medición en CUDA queda
+# pendiente.
 #
 # **Verificación.** Las tres arquitecturas coinciden dentro de la tolerancia, con margen: la
-# acción difiere entre ellas en menos de $5\times10^{-7}$ (escape) y $3\times10^{-8}$
+# acción difiere entre ellas en menos de $5\times10^{-7}$ (escape) y $2\times10^{-7}$
 # (instantón), y el RMS es siempre $\le5\times10^{-5}$.
 #
 # **Interpretación: qué limita la precisión.** Al nivel de la tolerancia, ni el horizonte ni
 # la red: los errores son de $10^{-7}$–$10^{-8}$ frente a $10^{-2}$. Por debajo de eso, el
 # límite observado es la **optimización**, no la capacidad de la red: multiplicar por 11 el
-# número de parámetros no reduce el error, que no es monótono con el tamaño (la red más
-# grande da la acción más alta en ambos problemas), y L-BFGS se detuvo por el límite de
-# evaluaciones. La dirección más difícil de optimizar es el modo casi plano de traslación:
-# el cruce cae en un lugar distinto con cada arquitectura ($-2.00$, $-1.83$ y $-1.85$ en el
-# escape; $+0.17$, $-0.23$ y $-0.03$ en el instantón), porque el funcional solo lo fija a través
+# número de parámetros no reduce el error, que no es monótono con el tamaño (la red
+# intermedia, 3 × 32, da la acción más baja en ambos problemas, y es la única que L-BFGS
+# llevó a su tolerancia; las demás se detuvieron por el límite de evaluaciones). Otra señal:
+# con la misma configuración y la misma semilla, la primera corrida del hito (10 hilos,
+# antes del renombre de D40) dio para el instantón por defecto $S_E - S_0 = 4.2\times10^{-8}$
+# y el cruce en $+0.17$; con 8 hilos (otro orden de las sumas en punto flotante) da
+# $2.2\times10^{-7}$ y $+0.60$. La dirección más difícil de optimizar es
+# el modo casi plano de traslación: el cruce cae en un lugar distinto con cada arquitectura
+# ($-2.00$, $-1.82$ y $-1.85$ en el escape; $+0.60$, $-0.21$ y $-0.03$ en el instantón), porque
+# el funcional solo lo fija a través
 # de términos exponencialmente pequeños en $T_h$. Cuánto aporta el horizonte finito a ese
 # exceso residual no se puede separar sin variar $T_h$ (estudio 1 del plan, fuera del alcance).
 
@@ -431,10 +445,10 @@ plt.show()
 #
 # | Criterio (arquitectura por defecto) | Escape térmico | Instantón | Tolerancia |
 # |---|---|---|---|
-# | Error relativo de la acción | $5.2\times10^{-7}$ | $2.2\times10^{-8}$ | $10^{-2}$ |
-# | RMS alineado frente a la solución cerrada | $4.8\times10^{-5}$ | $1.4\times10^{-5}$ | $10^{-2}$ |
-# | Acción − cota analítica | $+5.2\times10^{-7}$ | $+4.2\times10^{-8}$ | $\ge-10^{-4}$ |
-# | Malla doble (diferencia relativa) | $2.6\times10^{-11}$ | $2.4\times10^{-13}$ | $<10^{-4}$ |
+# | Error relativo de la acción | $5.1\times10^{-7}$ | $1.2\times10^{-7}$ | $10^{-2}$ |
+# | RMS alineado frente a la solución cerrada | $4.8\times10^{-5}$ | $2.8\times10^{-5}$ | $10^{-2}$ |
+# | Acción − cota analítica | $+5.1\times10^{-7}$ | $+2.2\times10^{-7}$ | $\ge-10^{-4}$ |
+# | Malla doble (diferencia relativa) | $2.6\times10^{-11}$ | $1.1\times10^{-12}$ | $<10^{-4}$ |
 #
 # La red variacional, entrenada solo con la acción, reproduce las soluciones cerradas de §2
 # y §3 y sus acciones $\Delta V/D$ y $S_0$, sin cruzar las cotas analíticas, con cualquiera de
