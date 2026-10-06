@@ -273,3 +273,26 @@ Cada entrada: fecha, decisión, alternativas consideradas y justificación.
 - **Alcance:** cambian el texto y las tablas del cuaderno y la bitácora. No cambian el código de `src/`, las pruebas ni los resultados. Las figuras regeneradas son idénticas byte a byte.
 - **Aprobación:** los revisores aprueban el hito 01 con estas correcciones; se crea la etiqueta anotada `hito-01`.
 - **Observación (de Claude):** en el pozo, el ancho medido coincide mejor con los cuantiles de la densidad de Boltzmann exacta restringida a x < 0 que con el valor armónico (0.3765 y 0.2987 frente a 0.373 y 0.298 en D = 0.15 y 0.1). Con D = 0.25 esa referencia queda un 7 % por encima de lo medido (0.523 frente a 0.488), porque su cola hacia la cima ya pesa.
+
+## 2026-10-05 — Hito 02: Bloque A reducido (red variacional)
+
+### D34. PyTorch solo para CPU, con el índice de PyTorch explícito
+
+- **Decisión (de los revisores, configuración de Claude):** grupo `neuronal` con `torch` 2.14.1+cpu. El índice `https://download.pytorch.org/whl/cpu` se declara con `explicit = true` y se asigna solo a `torch` en `[tool.uv.sources]`; todo lo demás sigue viniendo de PyPI. El grupo se agrega a `default-groups` (como en D21). PyTorch usa 10 hilos (`torch.set_num_threads`, como D23).
+- **Problema encontrado:** `uv add --index pytorch-cpu=…` sin `explicit` hacía que uv buscara también en ese índice las demás dependencias (por ejemplo, `requests`) y la resolución fallaba.
+- **Efecto en el entorno:** llegan torch, filelock, fsspec, networkx y setuptools; ninguna versión existente cambia (numpy sigue en 2.4.6). `torch.version.cuda` es `None`. Suite completa tras instalar: 185 passed.
+
+### D35. Sesgos ocultos no nulos: una red tanh sin sesgos impone la imparidad
+
+- **Problema:** la primera implementación iniciaba los sesgos en cero. Un perceptrón con tanh (función impar) y sin sesgos es exactamente impar, N(−s) = −N(s). En el instantón, el funcional es simétrico bajo x(τ) → −x(−τ) y, partiendo de una red impar, el gradiente conserva esa simetría: quedaría impuesta, contra la especificación. Lo detectó la prueba congelada `test_no_impone_simetria`, antes de cualquier entrenamiento.
+- **Decisión (de Claude):** los sesgos ocultos se inician uniformes en ±1/√(entradas) (la inicialización por defecto de PyTorch); los pesos ocultos siguen siendo Xavier, como pide la especificación. La última capa conserva sesgo nulo y pesos Xavier × 1e-3, de modo que el camino inicial sigue siendo la recta.
+- **Alternativa:** sesgos nulos (impone la simetría).
+
+### D36. La superposición red–ruido va en el cuaderno del hito 02
+
+- **Decisión (de los revisores):** la figura del camino de la red sobre el tubo reactivo de E7 va en `notebooks/02_neuronal/`, aunque CLAUDE.md §3 reserva para `notebooks/03_integracion/` los cuadernos que combinan ambos experimentos. Para respetar el propósito de §3, el cuaderno carga los resultados de E4 directamente con numpy, sin importar `taller.estocastico`, y `src/` no mezcla los bloques.
+- **Alternativa:** mover esa sección a `notebooks/03_integracion/`.
+
+### D37. L-BFGS se detuvo por el límite de evaluaciones
+
+- **Observación (de Claude):** con `iteraciones_max = 5000` (`max_eval` = 6250), L-BFGS terminó por el límite de evaluaciones en 5 de las 6 redes y por tolerancia en una (escape, 3 × 32). No es "hasta convergencia" en sentido estricto, pero el exceso de la acción sobre la cota ya es de 1e-7 a 1e-8, frente a una tolerancia de 1e-2. No se cambió la configuración.

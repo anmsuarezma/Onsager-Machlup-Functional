@@ -10,7 +10,7 @@ def crear_red(capas: list[int], semilla: int, escala_ultima_capa: float) -> nn.S
     Inicialización: Xavier uniforme en los pesos de las capas ocultas y sesgos uniformes en
     ±1/√(entradas) (la inicialización por defecto de PyTorch). Los sesgos no pueden ser nulos:
     con tanh impar y sin sesgos, la red sería exactamente impar y, en un funcional simétrico,
-    el gradiente conservaría esa simetría, que quedaría impuesta (D34). La última capa se
+    el gradiente conservaría esa simetría, que quedaría impuesta (D35). La última capa se
     inicia con Xavier multiplicado por `escala_ultima_capa` (casi nula) y sesgo nulo, de modo
     que N ≈ 0 y el camino inicial del ansatz es la recta entre los extremos. La semilla fija la
     inicialización con un generador propio, sin tocar el estado global de PyTorch.
