@@ -37,7 +37,7 @@ Grupo `neuronal` nuevo (D34, reemplazado por D38 en la revisión de dependencias
 | `red.py` | `crear_red(capas, semilla, escala_ultima_capa, dispositivo, dtype)`: perceptrón 1 → capas → 1 en float64, tanh y salida lineal. Pesos ocultos Xavier; sesgos ocultos uniformes en ±1/√(entradas) (D35); última capa Xavier × 1e-3 y sesgo nulo. Generador propio con semilla. `contar_parametros` |
 | `ansatz.py` | `camino`: x = x_a + (x_b − x_a)(t + T_h)/(2T_h) + [(t + T_h)(T_h − t)/T_h²]·N(t/T_h), fronteras exactas. `camino_y_derivada`: ẋ por autograd con `create_graph=True` |
 | `accion.py` | `accion_escape` (S·D) y `accion_instanton` (S_E) con `torch.trapezoid`; V y V′ de `referencias`, que operan también con tensores |
-| `entrenamiento.py` | `entrenar`: Adam y después L-BFGS (Wolfe fuerte) sobre la malla fija completa; registra la acción en cada evaluación. `evaluar_en_malla_doble`: camino, ẋ y acción en 4001 puntos |
+| `entrenamiento.py` | `entrenar`: Adam y después L-BFGS (Wolfe fuerte) sobre la malla fija completa; registra la acción y el cruce de la transición (`cruce`, desde `787cb57`) en cada evaluación. `evaluar_en_malla_doble`: camino, ẋ y acción en 4001 puntos |
 | `guardado.py` | `.npz` con metadatos y escritura atómica; duplica a propósito el del bloque estocástico, que no se puede importar (CLAUDE.md §3) |
 | `dispositivo.py` | `elegir_dispositivo` (cuda, si no mps, si no cpu, o el forzado), `precision` (float64; float32 con aviso en mps), `nombre_dispositivo` (D39) |
 | `correr.py` | `python -m taller.neuronal.correr configs/neuronal/entrenamiento.yaml [--dispositivo {cuda,mps,cpu}] [--hilos N] [--salida DIR] [--rehacer]`: 2 problemas × 3 arquitecturas, un archivo por combinación; dispositivo, nombre y precisión en los metadatos |
@@ -132,6 +132,7 @@ Regeneradas desde los resultados vigentes (CPU, `d8dc92d`); dos ejecuciones segu
 |---|---|
 | `caminos_red` | Camino de la red (alineado) frente a `x_om` y frente a `x_kink`, con la diferencia: oscilación de ~1e-4 (escape); en el instantón ≤ 7.5e-5 en la ventana y hasta 1.9e-4 en la cola derecha (borde del horizonte) |
 | `accion_entrenamiento` | Acción frente a evaluación (Adam y L-BFGS), en escala lineal con la cota marcada y como exceso sobre la cota en escala logarítmica: baja de ~1 a 5.1e-7 (escape) y 2.2e-7 (instantón) sin cruzar la cota |
+| `cruce_entrenamiento` | Posición de la transición (cruce por −1/√2 o por 0) en cada evaluación, para las tres arquitecturas, con el óptimo de horizonte finito (−1 en el escape, 0 en el instantón) |
 | `red_sobre_tubo_reactivo` | Camino de la red sobre la banda 10-90 % y la mediana de las trayectorias reactivas de E4 para D = 0.25, 0.15 y 0.1 |
 
 ## 6. Pendientes y dudas para la revisión
@@ -160,6 +161,21 @@ Regeneradas desde los resultados vigentes (CPU, `d8dc92d`); dos ejecuciones segu
 
 1. **Prueba modificada con autorización (D42):** el RMS del escape se evalúa en la intersección de [−1, 0.5] con el dominio, con el núcleo [−0.5, 0.5] entero dentro; la tolerancia no cambia. Validación: resultados vigentes en CPU, 4.771e-5 (sin cambio); resultados de la GPU (antes en falla), 4.637e-5; camino sintético con el núcleo fuera, falla; con el núcleo dentro, pasa.
 2. **Sección A.2′ del cuaderno, posición de la transición.** Cruces de las redes: −1.9999, −1.8246 y −1.8475 (CPU, 8 hilos). Minimizador exacto con horizonte finito, por la integral primera E = ½ẋ² − ½V′² (cuadratura con mpmath, 40 dígitos): E = 4.05e-13, **cruce t_c = −1.0000 = −T_h/3**, S·D − 1 = 3.8e-14. La estimación asintótica del costo de truncar, e^(−16L) + 2e^(−8R), con L y R las distancias a los bordes, tiene su mínimo en 16L = 8R, o sea t_c = −T_h/3, y vale 1.1e-7 en t_c = −2.
-   - **Discrepancia con la explicación pedida:** el argumento de las tasas (cola hacia la cima con tasa 4 frente a salida del pozo con tasa 8) explica que la transición quede a la izquierda del centro, pero el óptimo de horizonte finito está en −1, no en −2. Que la red quede en ≈ −2 se debe a lo débil de la fijación: entre −1 y −2 la acción cambia solo ~1e-7, menos que el error residual de la red (5e-7). Así lo escribí en el cuaderno. La hipótesis de que el optimizador empuja la transición hasta donde ese costo deja de ser apreciable y se detiene ahí no está comprobada: no se registró la trayectoria del cruce durante el entrenamiento.
+   - **Explicación pedida, matizada:** el argumento de las tasas (cola hacia la cima con tasa 4 frente a salida del pozo con tasa 8) explica que la transición quede a la izquierda del centro, pero el óptimo de horizonte finito está en −1, no en −2. Que la red quede en ≈ −2 se debe a lo débil de la fijación: entre −1 y −2 la acción cambia solo ~1e-7, menos que el error residual de la red (5e-7). Así lo escribí en el cuaderno. La hipótesis de que el optimizador empuja la transición hasta donde ese costo deja de ser apreciable y se detiene ahí quedó comprobada después (sección 9).
    - mpmath ya estaba instalado como dependencia de sympy; no se agregó ninguna dependencia.
 3. **Hilos de Numba y tiempos en CUDA (D43):** ver sección 6.
+
+## 9. Trayectoria del cruce durante el entrenamiento (2026-10-06)
+
+Pedido de los revisores: comprobar la hipótesis de A.2′ (opción a).
+
+1. **Implementación:** `entrenar` calcula en cada evaluación el cruce del camino por −1/√2 (escape) o por 0 (instantón), sobre el camino separado del grafo; `correr.py` lo guarda en la clave `cruce` (commit `787cb57`).
+2. **Reentrenamiento:** CPU, 8 hilos, árbol limpio, `787cb57`; 262 s en total. Los 6 resultados son **idénticos bit a bit** a los anteriores en todas las claves previas: registrar el cruce no altera el entrenamiento. Tiempos: 23.2, 39.9 y 75.4 s (escape); 20.8, 7.9 y 94.9 s (instantón). La tabla de 3.2 conserva los de `d8dc92d`; la diferencia entre corridas es de pocos segundos, ruido de medición.
+3. **Resultado (escape):** las tres redes parten de la recta (cruce −1.25). Adam lleva la transición casi al borde izquierdo (−2.79/−2.78/−2.79 en las evaluaciones 765/429/243, con exceso ~3e-2). Desde ahí vuelve hacia el óptimo −1, sobre todo al final de Adam y al empezar L-BFGS, y se detiene. A partir de la evaluación 3111/3164/2665 (exceso 7e-7/2e-7/1.5e-4) ya no se aleja más de 0.01 de su valor final (−1.9999/−1.8246/−1.8475), y en la segunda mitad de L-BFGS se mueve 6e-4/2e-3/4e-5.
+4. **Resultado (instantón):** el óptimo es τ_c = 0, por simetría. La red por defecto se va hasta +3.19 y vuelve hasta +0.60; las otras oscilan alrededor de 0 y quedan en −0.21 y −0.03. Se detienen igual: se mueven menos de 4e-3 en la segunda mitad de L-BFGS.
+5. **Conclusión:** la hipótesis se confirma. La transición se acerca al óptimo desde la izquierda y se detiene cuando el costo de truncar que la empuja, e^(−16L), cae a 1e-8–1e-7 (L = 1–1.18), por debajo del error residual de la red (2e-7–6e-7). **No estudiado:** por qué Adam la lleva primero hacia el borde izquierdo.
+6. **Figura nueva:** `cruce_entrenamiento` (sección 5). Dos ejecuciones seguidas del cuaderno dan las 8 figuras idénticas byte a byte, y las demás figuras no cambiaron.
+
+## 10. Cierre
+
+El hito 02 se cierra con la etiqueta anotada `hito-02`, por indicación de los revisores.

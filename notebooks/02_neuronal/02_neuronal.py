@@ -284,7 +284,11 @@ plt.show()
 # $t_c = -T_h + \int_{-1}^{-1/\sqrt2}dx/\dot x$ y
 # $S\cdot D - 1 = \tfrac14\int(\dot x - V')^2\,dt = \tfrac14\int_{-1}^{0}(\dot x - V')^2/\dot x\,dx$
 # (cuadratura con mpmath, en 40 dígitos, porque $E\sim10^{-13}$). (3) La estimación
-# $e^{-16L} + 2e^{-8R}$ del costo de truncar en las posiciones de interés.
+# $e^{-16L} + 2e^{-8R}$ del costo de truncar en las posiciones de interés. (4) La trayectoria
+# del cruce durante el entrenamiento, registrada en cada evaluación de la acción (clave
+# `cruce` de los resultados). En el instantón las dos colas tienen la misma tasa
+# ($\sqrt{V''(\pm1)} = 2\sqrt2$) y, por la simetría $x(\tau)\to-x(-\tau)$, el óptimo de
+# horizonte finito está en $\tau_c = 0$.
 
 # %%
 for a in ARQUITECTURAS:
@@ -310,28 +314,74 @@ for t_c in (-2.0, -1.5, -1.0, -0.5, 0.0):
     L, Rd = t_c + float(T_h), float(T_h) - t_c
     print(f"t_c = {t_c:+.1f}: costo estimado de truncar e^(−16L) + 2e^(−8R) = {np.exp(-16 * L) + 2 * np.exp(-8 * Rd):.1e}")
 
+# %%
+fig, ejes = plt.subplots(1, 2, figsize=(11, 3.8))
+OPTIMO = {"escape": float(t_c_exacto), "instanton": 0.0}
+for ax, (p, nombre) in zip(ejes, [("escape", "escape térmico (cruce por $-1/\\sqrt{2}$)"), ("instanton", "instantón (cruce por 0)")]):
+    for a, color in zip(ARQUITECTURAS, (AZUL, NARANJA, AQUA)):
+        datos, m = R[p, a]
+        q = m["parametros"]
+        ax.plot(np.arange(1, len(datos["cruce"]) + 1), datos["cruce"], color=color, lw=1.3,
+                label=f"{a} ({' × '.join(map(str, q['capas']))})")
+    ax.axhline(OPTIMO[p], color=TINTA, lw=1.0, ls="--", label="óptimo con horizonte finito")
+    ax.axhline(-q["horizonte"], color=TINTA_SUAVE, lw=0.8, ls=":")
+    ax.axvline(q["adam"]["iteraciones"], color=TINTA_SUAVE, lw=0.8)
+    ax.set_xscale("log")
+    ax.set_title(nombre, loc="left")
+    ax.set_xlabel("evaluación de la acción (Adam, luego L-BFGS)")
+    ax.set_ylim(-q["horizonte"] - 0.1, q["horizonte"] + 0.1)
+ejes[0].set_ylabel("cruce $t_c$ (borde del dominio punteado)")
+ejes[0].legend(loc="upper left", fontsize=8)
+fig.suptitle("A.2′ La posición de la transición durante el entrenamiento", x=0.01, ha="left", fontsize=11)
+fig.tight_layout()
+guardar(fig, "cruce_entrenamiento")
+plt.show()
+for p in PROBLEMAS:
+    cota = PROBLEMAS[p][0]
+    for a in ARQUITECTURAS:
+        datos, _ = R[p, a]
+        c, h, fase = datos["cruce"], datos["historia"], datos["fase"]
+        j = int(np.argmax(np.abs(c - OPTIMO[p])))
+        lejos = np.flatnonzero(np.abs(c - c[-1]) > 0.01)
+        k = int(lejos[-1]) + 1 if len(lejos) else 0
+        n_adam = int((fase == 0).sum())
+        print(f"{p:9} {a:16}: inicio {c[0]:+.3f}; más lejos del óptimo {c[j]:+.3f} (evaluación {j + 1}, exceso {h[j] - cota:.1e}); "
+              f"fin de Adam {c[n_adam - 1]:+.3f}; final {c[-1]:+.4f}; a menos de 0.01 del final desde la evaluación "
+              f"{k + 1} de {len(c)} (exceso {h[k] - cota:.1e}); se mueve {abs(c[-1] - c[n_adam + (len(c) - n_adam) // 2]):.0e} "
+              f"en la segunda mitad de L-BFGS")
+
 # %% [markdown]
 # **Verificación.** El minimizador exacto con $T_h = 3$ cruza en $t_c = -1.0000 = -T_h/3$,
 # con $S\cdot D - 1 = 3.8\times10^{-14}$, como predice la estimación asintótica. Las redes,
-# en cambio, cruzan en $-2.00$, $-1.82$ y $-1.85$, con un exceso de
+# en cambio, terminan cruzando en $-2.00$, $-1.82$ y $-1.85$, con un exceso de
 # $2\times10^{-7}$–$6\times10^{-7}$.
+#
+# La trayectoria del cruce muestra cómo llegan ahí. En el escape, las tres redes parten de la
+# recta inicial (cruce en $-1.25$) y Adam lleva la transición casi hasta el borde izquierdo
+# ($-2.79$ a $-2.78$, entre las evaluaciones 240 y 770, con un exceso de $\sim3\times10^{-2}$).
+# Desde ahí se desliza hacia la derecha, hacia el óptimo (sobre todo al final de Adam y en las
+# primeras evaluaciones de L-BFGS), y se detiene: a partir de la
+# evaluación $\approx2700$–$3200$, con un exceso de $10^{-4}$–$10^{-7}$, el cruce ya no se aleja
+# más de 0.01 de su valor final, y en la segunda mitad de L-BFGS se mueve menos de
+# $3\times10^{-3}$. En el instantón ocurre lo mismo alrededor de su óptimo $\tau_c = 0$: la red
+# por defecto se va hasta $+3.19$ y vuelve hasta $+0.60$, donde se queda.
 #
 # **Interpretación física.** El argumento de las tasas explica por qué la transición está
 # a la izquierda del centro: con horizonte finito, la cola lenta hacia la cima (tasa 4) se
 # trunca peor que la salida rápida del pozo (tasa 8), y el óptimo deja el doble de tiempo a la
 # derecha ($R = 2L$). Pero no explica, por sí solo, que la red quede en $t\approx-2$: el
 # óptimo de horizonte finito está en $-1$. Lo que fija la posición de la red es lo débil que
-# es esa preferencia. Desplazar la transición de $-1$ a $-2$ cuesta solo
-# $e^{-16}\approx1\times10^{-7}$, menos que el error residual de aproximación y de optimización
-# de la red ($5\times10^{-7}$). A esa precisión el funcional casi no distingue esas posiciones.
-# Hacia la izquierda de $-2$, en cambio, el costo crece rápido ($e^{-8}\approx3\times10^{-4}$
-# en $t_c = -2.5$). Lo observado es coherente con que el optimizador empuje la transición
-# hasta donde ese costo deja de ser apreciable frente a su error residual y se detenga ahí; no
-# se registró la trayectoria del cruce durante el entrenamiento para comprobarlo. Que la posición dependa de cómo se hicieron las sumas confirma
-# lo débil de la fijación: con la misma red, la misma semilla y el mismo código, el cruce cae
-# en $-1.9999$ en CPU con 8 hilos, en $-1.9993$ con 10 hilos y en $-2.0007$ en la GPU (D41, D42).
-# Para la física del escape nada de esto importa: la forma del camino y la acción no dependen
-# de dónde esté la transición, y por eso se alinea antes de comparar.
+# es esa preferencia. La trayectoria registrada lo confirma: la transición se acerca al
+# óptimo desde la izquierda y se detiene cuando el costo de truncar que todavía la empuja,
+# $e^{-16L}$, cae a $10^{-8}$–$10^{-7}$ ($L = 1$–$1.18$), por debajo del error residual de
+# aproximación y de optimización de la red ($2\times10^{-7}$–$6\times10^{-7}$). Desplazar la
+# transición de $-2$ a $-1$ bajaría la acción solo $\sim10^{-7}$, y el optimizador no lo
+# resuelve. Por qué Adam la empuja primero hacia el borde izquierdo no se estudió. Que la
+# posición final dependa de cómo se hicieron las sumas confirma lo débil de la fijación: con
+# la misma red, la misma semilla y el mismo código, el cruce cae en $-1.9999$ en CPU con 8
+# hilos, en $-1.9993$ con 10 hilos y en $-2.0007$ en la GPU (D41, D42). Para la física del
+# escape nada de esto importa: la forma del camino y la acción no dependen de dónde esté la
+# transición, y por eso se alinea antes de comparar.
 
 # %% [markdown]
 # ---
