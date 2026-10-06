@@ -32,6 +32,19 @@ estocastico = [
     "numba>=0.68.0",
     "pyyaml>=6.0.3",
 ]
+neuronal = [
+    "torch>=2.14.1",
+]
 
 [tool.uv]
-default-groups = ["dev", "estocastico"]
+default-groups = ["dev", "estocastico", "neuronal"]
+
+# PyTorch solo para CPU (hito 02): el índice de PyTorch es explícito, así que solo se usa
+# para los paquetes asignados en [tool.uv.sources]; todo lo demás sigue viniendo de PyPI.
+[[tool.uv.index]]
+name = "pytorch-cpu"
+url = "https://download.pytorch.org/whl/cpu"
+explicit = true
+
+[tool.uv.sources]
+torch = { index = "pytorch-cpu" }
